@@ -699,7 +699,7 @@ export default function Welcome() {
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <span>Dibuat dengan</span>
                                 <Heart className="size-3.5 fill-primary text-primary" />
-                                <span>di Indonesia</span>
+                                <span>oleh Qinshibe</span>
                             </div>
                         </div>
                     </div>
