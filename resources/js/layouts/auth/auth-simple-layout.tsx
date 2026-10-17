@@ -20,7 +20,7 @@ export default function AuthSimpleLayout({
 
             <div className="relative z-10 flex w-full max-w-md flex-col items-center">
                 {/* Back to Home Button */}
-                <div className="mb-6 flex w-full justify-between items-center">
+                {/* <div className="mb-6 flex w-full justify-between items-center">
                     <Link
                         href={home()}
                         className="group inline-flex items-center gap-1.5 border-2 border-foreground bg-card px-3 py-1.5 text-xs sm:text-sm font-bold shadow-xs transition-all hover:-translate-y-0.5 hover:bg-secondary hover:shadow-sm"
@@ -33,7 +33,7 @@ export default function AuthSimpleLayout({
                         <Sparkles className="size-3 text-foreground" />
                         eventoria.id
                     </span>
-                </div>
+                </div> */}
 
                 {/* Logo & Brand Header */}
                 <div className="mb-6 flex flex-col items-center gap-2">
