@@ -24,7 +24,7 @@ export default function Login({ status, canResetPassword }: Props) {
         <>
             <Head title="Masuk ke Akun" />
 
-            <PasskeyVerify />
+            {/* <PasskeyVerify /> */}
 
             {/* Top Ornament Badge */}
             <div className="mb-4 flex items-center justify-center">
