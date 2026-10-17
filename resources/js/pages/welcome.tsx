@@ -27,6 +27,8 @@ import {
     PartyPopper,
     Clock,
     CheckCircle2,
+    Menu,
+    X,
 } from 'lucide-react';
 import { type ReactNode, useEffect, useState, useRef } from 'react';
 
@@ -138,12 +140,25 @@ function StepCard({ step, title, description }: { step: number; title: string; d
 export default function Welcome() {
     const { auth } = usePage().props;
     const [scrollY, setScrollY] = useState(0);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     useEffect(() => {
         const handleScroll = () => setScrollY(window.scrollY);
+        const handleResize = () => {
+            if (window.innerWidth >= 768) {
+                setMobileMenuOpen(false);
+            }
+        };
+
         window.addEventListener('scroll', handleScroll, { passive: true });
-        return () => window.removeEventListener('scroll', handleScroll);
+        window.addEventListener('resize', handleResize);
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            window.removeEventListener('resize', handleResize);
+        };
     }, []);
+
+    const isNavSolid = scrollY > 40 || mobileMenuOpen;
 
     return (
         <>
@@ -157,34 +172,38 @@ export default function Welcome() {
             <div className="min-h-screen bg-background text-foreground">
                 {/* ───── NAVBAR ───── */}
                 <nav
-                    className={`fixed top-0 right-0 left-0 z-50 transition-all duration-300 ${
-                        scrollY > 50 ? 'border-b-2 border-foreground bg-background/95 shadow-sm backdrop-blur-sm' : 'bg-transparent'
+                    className={`fixed top-0 right-0 left-0 z-50 transition-all duration-200 ${
+                        isNavSolid
+                            ? 'border-b-2 border-foreground bg-background/95 shadow-sm backdrop-blur-md'
+                            : 'bg-transparent'
                     }`}
                 >
-                    <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-                        <Link href="/" className="flex items-center gap-2">
-                            <div className="flex size-9 items-center justify-center border-2 border-foreground bg-primary shadow-sm">
-                                <PartyPopper className="size-5 text-primary-foreground" />
+                    <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
+                        <Link href="/" className="flex items-center gap-2" onClick={() => setMobileMenuOpen(false)}>
+                            <div className="flex size-8 sm:size-9 items-center justify-center border-2 border-foreground bg-primary shadow-xs sm:shadow-sm">
+                                <PartyPopper className="size-4 sm:size-5 text-primary-foreground" />
                             </div>
-                            <span className="font-mono text-xl font-black tracking-tight">eventoria.id</span>
+                            <span className="font-mono text-lg sm:text-xl font-black tracking-tight">eventoria.id</span>
                         </Link>
 
-                        <div className="hidden items-center gap-1 md:flex">
-                            <a href="#features" className="px-3 py-2 text-sm font-semibold transition-colors hover:text-primary">
+                        {/* Desktop Links (PC / Laptop) */}
+                        <div className="hidden items-center gap-1 lg:gap-2 md:flex">
+                            <a href="#features" className="px-3 py-1.5 text-sm font-semibold transition-colors hover:text-primary">
                                 Fitur
                             </a>
-                            <a href="#categories" className="px-3 py-2 text-sm font-semibold transition-colors hover:text-primary">
+                            <a href="#categories" className="px-3 py-1.5 text-sm font-semibold transition-colors hover:text-primary">
                                 Kategori
                             </a>
-                            <a href="#how-it-works" className="px-3 py-2 text-sm font-semibold transition-colors hover:text-primary">
+                            <a href="#how-it-works" className="px-3 py-1.5 text-sm font-semibold transition-colors hover:text-primary">
                                 Cara Kerja
                             </a>
-                            <a href="#testimonials" className="px-3 py-2 text-sm font-semibold transition-colors hover:text-primary">
+                            <a href="#testimonials" className="px-3 py-1.5 text-sm font-semibold transition-colors hover:text-primary">
                                 Testimoni
                             </a>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        {/* Desktop Action Buttons */}
+                        <div className="hidden items-center gap-2 md:flex">
                             {auth.user ? (
                                 <Button asChild>
                                     <Link href={dashboard()}>
@@ -206,7 +225,107 @@ export default function Welcome() {
                                 </>
                             )}
                         </div>
+
+                        {/* Mobile & Tablet Controls */}
+                        <div className="flex items-center gap-2 md:hidden">
+                            {auth.user ? (
+                                <Button size="sm" asChild className="border-2 border-foreground shadow-xs text-xs font-bold px-3">
+                                    <Link href={dashboard()}>
+                                        Dashboard
+                                    </Link>
+                                </Button>
+                            ) : (
+                                <Button size="sm" asChild className="border-2 border-foreground shadow-xs text-xs font-bold px-3">
+                                    <Link href={register()}>
+                                        Daftar
+                                    </Link>
+                                </Button>
+                            )}
+
+                            <button
+                                type="button"
+                                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                                className="flex size-9 items-center justify-center border-2 border-foreground bg-background shadow-xs transition-transform active:translate-x-0.5 active:translate-y-0.5 hover:bg-secondary cursor-pointer"
+                                aria-label={mobileMenuOpen ? 'Tutup navigasi' : 'Buka navigasi'}
+                            >
+                                {mobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+                            </button>
+                        </div>
                     </div>
+
+                    {/* Mobile Navigation Dropdown Menu (Neo-brutalism style) */}
+                    {mobileMenuOpen && (
+                        <div className="border-t-2 border-foreground bg-background px-4 py-5 shadow-lg md:hidden animate-in slide-in-from-top-2 duration-200">
+                            <div className="flex flex-col gap-2">
+                                <a
+                                    href="#features"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    className="flex items-center justify-between border-2 border-foreground bg-card p-3 font-bold transition-all hover:translate-x-1 hover:bg-secondary shadow-xs"
+                                >
+                                    <span>Fitur Unggulan</span>
+                                    <ChevronRight className="size-4" />
+                                </a>
+                                <a
+                                    href="#categories"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    className="flex items-center justify-between border-2 border-foreground bg-card p-3 font-bold transition-all hover:translate-x-1 hover:bg-secondary shadow-xs"
+                                >
+                                    <span>Kategori Event</span>
+                                    <ChevronRight className="size-4" />
+                                </a>
+                                <a
+                                    href="#how-it-works"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    className="flex items-center justify-between border-2 border-foreground bg-card p-3 font-bold transition-all hover:translate-x-1 hover:bg-secondary shadow-xs"
+                                >
+                                    <span>Cara Kerja</span>
+                                    <ChevronRight className="size-4" />
+                                </a>
+                                <a
+                                    href="#testimonials"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    className="flex items-center justify-between border-2 border-foreground bg-card p-3 font-bold transition-all hover:translate-x-1 hover:bg-secondary shadow-xs"
+                                >
+                                    <span>Testimoni</span>
+                                    <ChevronRight className="size-4" />
+                                </a>
+
+                                <div className="mt-2 border-t-2 border-foreground/20 pt-3">
+                                    {auth.user ? (
+                                        <Button asChild size="lg" className="w-full border-2 border-foreground font-bold shadow-sm">
+                                            <Link href={dashboard()} onClick={() => setMobileMenuOpen(false)}>
+                                                Buka Dashboard
+                                                <ArrowRight data-icon="inline-end" />
+                                            </Link>
+                                        </Button>
+                                    ) : (
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <Button
+                                                variant="outline"
+                                                size="lg"
+                                                asChild
+                                                className="w-full border-2 border-foreground font-bold shadow-xs hover:bg-muted"
+                                            >
+                                                <Link href={login()} onClick={() => setMobileMenuOpen(false)}>
+                                                    Masuk
+                                                </Link>
+                                            </Button>
+                                            <Button
+                                                asChild
+                                                size="lg"
+                                                className="w-full border-2 border-foreground font-bold shadow-xs"
+                                            >
+                                                <Link href={register()} onClick={() => setMobileMenuOpen(false)}>
+                                                    Daftar Gratis
+                                                    <Sparkles data-icon="inline-end" />
+                                                </Link>
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </nav>
 
                 {/* ───── HERO ───── */}
