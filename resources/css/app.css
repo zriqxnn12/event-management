@@ -421,3 +421,67 @@
     --radius-4xl:
         calc(var(--radius) * 2.6);
 }
+
+@keyframes float-slow {
+    0%, 100% {
+        transform: translateY(0px) rotate(var(--tw-rotate, 0deg));
+    }
+    50% {
+        transform: translateY(-8px) rotate(var(--tw-rotate, 0deg));
+    }
+}
+
+@keyframes float-reverse {
+    0%, 100% {
+        transform: translateY(0px) rotate(var(--tw-rotate, 0deg));
+    }
+    50% {
+        transform: translateY(8px) rotate(var(--tw-rotate, 0deg));
+    }
+}
+
+@keyframes marquee-scroll {
+    0% {
+        transform: translateX(0%);
+    }
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+@keyframes pulse-ring {
+    0% {
+        transform: scale(0.95);
+        opacity: 0.8;
+    }
+    50% {
+        transform: scale(1.15);
+        opacity: 0.3;
+    }
+    100% {
+        transform: scale(0.95);
+        opacity: 0.8;
+    }
+}
+
+.animate-float-slow {
+    animation: float-slow 4.5s ease-in-out infinite;
+}
+
+.animate-float-reverse {
+    animation: float-reverse 5.2s ease-in-out infinite;
+}
+
+.animate-marquee {
+    display: flex;
+    width: max-content;
+    animation: marquee-scroll 28s linear infinite;
+}
+
+.animate-marquee:hover {
+    animation-play-state: paused;
+}
+
+.animate-pulse-ring {
+    animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
