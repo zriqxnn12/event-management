@@ -22,6 +22,7 @@ class VendorProfileController extends Controller
                 'about' => $user->about,
                 'role' => $user->role,
                 'memberSince' => $user->created_at?->format('F Y') ?? 'Baru Bergabung',
+                'socialMedia' => $user->social_media ?? [],
             ],
         ]);
     }

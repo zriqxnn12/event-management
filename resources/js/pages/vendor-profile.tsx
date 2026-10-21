@@ -24,6 +24,15 @@ import {
     Palette,
     GraduationCap,
 } from 'lucide-react';
+import { SocialIcon, getPlatformMeta } from '@/components/social-media-icon';
+import { toast } from 'sonner';
+
+type SocialMediaItem = {
+    id?: string;
+    platform: string;
+    url: string;
+    handle?: string | null;
+};
 
 type Vendor = {
     id: number;
@@ -33,11 +42,49 @@ type Vendor = {
     about?: string | null;
     role: string;
     memberSince: string;
+    socialMedia?: SocialMediaItem[];
 };
 
 type Props = {
     vendor: Vendor;
 };
+
+function resolveSocialMediaUrl(platform: string, rawUrl: string): string {
+    const raw = (rawUrl || '').trim();
+    if (!raw) return '#';
+    if (/^(?:f|ht)tps?:\/\//i.test(raw)) return raw;
+
+    if (platform === 'whatsapp') {
+        const phone = raw.replace(/[^0-9]/g, '');
+        const normalized = phone.startsWith('0') ? '62' + phone.slice(1) : phone;
+        return `https://wa.me/${normalized}`;
+    }
+
+    if (raw.startsWith('@')) {
+        const username = raw.slice(1);
+        switch (platform) {
+            case 'instagram':
+                return `https://instagram.com/${username}`;
+            case 'tiktok':
+                return `https://tiktok.com/@${username}`;
+            case 'twitter':
+            case 'x':
+                return `https://x.com/${username}`;
+            case 'facebook':
+                return `https://facebook.com/${username}`;
+            case 'youtube':
+                return `https://youtube.com/@${username}`;
+            case 'github':
+                return `https://github.com/${username}`;
+            case 'telegram':
+                return `https://t.me/${username}`;
+            default:
+                return `https://${username}`;
+        }
+    }
+
+    return `https://${raw}`;
+}
 
 /** Static placeholder event data for the vendor profile. */
 const PLACEHOLDER_EVENTS = [
@@ -271,15 +318,56 @@ export default function VendorProfile({ vendor }: Props) {
 
                                 {/* Action buttons */}
                                 <div className="flex flex-wrap items-center gap-2">
-                                    <Button className="border-2 border-foreground font-bold shadow-sm active:translate-x-0.5 active:translate-y-0.5">
-                                        <Mail data-icon="inline-start" />
-                                        Hubungi
-                                    </Button>
-                                    <Button variant="outline" className="border-2 border-foreground font-bold shadow-xs">
-                                        <Heart data-icon="inline-start" />
-                                        Ikuti
-                                    </Button>
-                                    <Button variant="outline" size="icon" className="border-2 border-foreground shadow-xs">
+                                    {vendor.socialMedia && vendor.socialMedia.length > 0 ? (
+                                        vendor.socialMedia.map((item, idx) => {
+                                            const meta = getPlatformMeta(item.platform);
+                                            const label = item.handle?.trim() || meta.label;
+                                            const targetUrl = resolveSocialMediaUrl(item.platform, item.url);
+
+                                            return (
+                                                <Button
+                                                    key={item.id || `${item.platform}-${idx}`}
+                                                    variant="outline"
+                                                    asChild
+                                                    className="border-2 border-foreground font-bold shadow-xs hover:bg-secondary/40 active:translate-x-0.5 active:translate-y-0.5"
+                                                >
+                                                    <a
+                                                        href={targetUrl}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="flex items-center gap-2"
+                                                    >
+                                                        <SocialIcon platform={item.platform} className="size-4" />
+                                                        <span>{label}</span>
+                                                    </a>
+                                                </Button>
+                                            );
+                                        })
+                                    ) : (auth as any)?.user?.id === vendor.id ? (
+                                        <Button
+                                            variant="outline"
+                                            asChild
+                                            className="border-2 border-foreground font-bold shadow-xs active:translate-x-0.5 active:translate-y-0.5"
+                                        >
+                                            <Link href="/settings/social-media" className="flex items-center gap-2">
+                                                <Sparkles className="size-4 text-primary" />
+                                                <span>+ Tambah Media Sosial</span>
+                                            </Link>
+                                        </Button>
+                                    ) : null}
+
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        className="border-2 border-foreground shadow-xs active:translate-x-0.5 active:translate-y-0.5 cursor-pointer"
+                                        onClick={() => {
+                                            if (typeof window !== 'undefined' && navigator.clipboard) {
+                                                navigator.clipboard.writeText(window.location.href);
+                                                toast.success('Link profil berhasil disalin ke clipboard!');
+                                            }
+                                        }}
+                                        title="Bagikan Profil"
+                                    >
                                         <Share2 className="size-4" />
                                     </Button>
                                 </div>

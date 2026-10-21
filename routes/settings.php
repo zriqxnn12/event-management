@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
+use App\Http\Controllers\Settings\SocialMediaController;
 use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Support\Facades\Route;
 
@@ -10,6 +11,9 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('settings/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('settings/profile', [ProfileController::class, 'update'])->name('profile.update');
+
+    Route::get('settings/social-media', [SocialMediaController::class, 'edit'])->name('social-media.edit');
+    Route::patch('settings/social-media', [SocialMediaController::class, 'update'])->name('social-media.update');
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
