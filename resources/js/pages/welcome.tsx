@@ -419,7 +419,7 @@ export default function Welcome() {
 
                         {/* Mobile & Tablet Controls */}
                         <div className="flex items-center gap-2 md:hidden">
-                            {auth.user ? (
+                            {/* {auth.user ? (
                                 <Button size="sm" asChild className="border-2 border-foreground shadow-xs text-xs font-bold px-3">
                                     <Link href={dashboard()}>
                                         Dashboard
@@ -431,7 +431,7 @@ export default function Welcome() {
                                         Daftar
                                     </Link>
                                 </Button>
-                            )}
+                            )} */}
 
                             <button
                                 type="button"

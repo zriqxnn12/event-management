@@ -231,12 +231,12 @@ export default function VendorProfile({ vendor }: Props) {
                         </Link>
 
                         <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm" asChild className="border-2 border-foreground text-xs font-bold shadow-xs">
+                            {/* <Button variant="outline" size="sm" asChild className="border-2 border-foreground text-xs font-bold shadow-xs">
                                 <Link href={home()}>
                                     <ArrowLeft data-icon="inline-start" />
                                     Beranda
                                 </Link>
-                            </Button>
+                            </Button> */}
                             {auth.user && (
                                 <Button size="sm" asChild className="border-2 border-foreground text-xs font-bold shadow-xs">
                                     <Link href="/dashboard">Dashboard</Link>

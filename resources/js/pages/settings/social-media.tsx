@@ -169,10 +169,10 @@ export default function SocialMediaSettings({ socialMedia: initialSocialMedia = 
                 {/* ───── HEADER ───── */}
                 <div>
                     <div className="mb-2 flex items-center gap-2">
-                        <Badge variant="outline" className="border-2 border-foreground font-black uppercase shadow-xs">
+                        {/* <Badge variant="outline" className="border-2 border-foreground font-black uppercase shadow-xs">
                             Vendor Profile
                         </Badge>
-                        <span className="text-xs text-muted-foreground font-medium">Pengaturan Tautan Publik</span>
+                        <span className="text-xs text-muted-foreground font-medium">Pengaturan Tautan Publik</span> */}
                     </div>
                     <Heading
                         variant="small"
@@ -259,11 +259,11 @@ export default function SocialMediaSettings({ socialMedia: initialSocialMedia = 
                             <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
                                 Daftar Media Sosial yang Ditampilkan ({items.length})
                             </h2>
-                            {items.length > 0 && (
+                            {/* {items.length > 0 && (
                                 <span className="text-xs text-muted-foreground">
                                     Tombol akan otomatis muncul pada profil vendor
                                 </span>
-                            )}
+                            )} */}
                         </div>
 
                         {items.length === 0 ? (
@@ -456,7 +456,7 @@ export default function SocialMediaSettings({ socialMedia: initialSocialMedia = 
                             {processing ? 'Menyimpan...' : 'Simpan Media Sosial'}
                         </Button>
 
-                        <Button
+                        {/* <Button
                             type="button"
                             variant="outline"
                             onClick={() => handleAddPlatform('website')}
@@ -464,7 +464,7 @@ export default function SocialMediaSettings({ socialMedia: initialSocialMedia = 
                         >
                             <Plus className="mr-1.5 size-4" />
                             Tambah Tautan Lain
-                        </Button>
+                        </Button> */}
                     </div>
                 </form>
             </div>
