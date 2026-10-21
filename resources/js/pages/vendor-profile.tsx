@@ -29,6 +29,8 @@ type Vendor = {
     id: number;
     name: string;
     username: string;
+    avatar?: string | null;
+    about?: string | null;
     role: string;
     memberSince: string;
 };
@@ -210,8 +212,16 @@ export default function VendorProfile({ vendor }: Props) {
                         <div className="flex flex-col items-center gap-6 md:flex-row md:items-start md:gap-8">
                             {/* Avatar */}
                             <div className="relative shrink-0">
-                                <div className="flex size-28 items-center justify-center border-2 border-foreground bg-primary font-mono text-4xl font-black text-primary-foreground shadow-md sm:size-32">
-                                    {initials}
+                                <div className="flex size-28 items-center justify-center overflow-hidden border-2 border-foreground bg-primary font-mono text-4xl font-black text-primary-foreground shadow-md sm:size-32">
+                                    {vendor.avatar ? (
+                                        <img
+                                            src={vendor.avatar}
+                                            alt={vendor.name}
+                                            className="size-full object-cover"
+                                        />
+                                    ) : (
+                                        initials
+                                    )}
                                 </div>
                                 {/* Corner decorations */}
                                 <div className="absolute -top-2 -left-2 size-4 border-2 border-foreground bg-secondary" />
@@ -238,9 +248,9 @@ export default function VendorProfile({ vendor }: Props) {
                                 <h1 className="mb-1 text-3xl font-black tracking-tight sm:text-4xl">{vendor.name}</h1>
                                 <p className="mb-4 font-mono text-sm font-semibold text-muted-foreground">@{vendor.username}</p>
 
-                                <p className="mb-5 max-w-lg text-sm leading-relaxed text-muted-foreground">
-                                    Event organizer berpengalaman yang fokus pada pengalaman peserta yang luar biasa. Telah menyelenggarakan
-                                    berbagai event mulai dari konser musik, workshop kreatif, hingga konferensi teknologi.
+                                <p className="mb-5 max-w-lg text-sm leading-relaxed text-muted-foreground whitespace-pre-line">
+                                    {vendor.about ||
+                                        'Event organizer berpengalaman yang fokus pada pengalaman peserta yang luar biasa. Telah menyelenggarakan berbagai event mulai dari konser musik, workshop kreatif, hingga konferensi teknologi.'}
                                 </p>
 
                                 {/* Meta info tags */}
@@ -348,15 +358,15 @@ export default function VendorProfile({ vendor }: Props) {
                                     <CardTitle className="text-lg font-black">Tentang Organizer</CardTitle>
                                 </CardHeader>
                                 <CardContent className="flex flex-col gap-4 text-sm text-muted-foreground">
-                                    <p className="leading-relaxed">
-                                        Kami adalah tim event organizer yang berdedikasi untuk menciptakan pengalaman tak terlupakan. Dengan
-                                        pengalaman lebih dari 5 tahun di industri event, kami telah menyelenggarakan berbagai acara mulai dari
-                                        konser musik skala besar hingga workshop intim.
+                                    <p className="leading-relaxed whitespace-pre-line">
+                                        {vendor.about ||
+                                            'Kami adalah tim event organizer yang berdedikasi untuk menciptakan pengalaman tak terlupakan. Dengan pengalaman lebih dari 5 tahun di industri event, kami telah menyelenggarakan berbagai acara mulai dari konser musik skala besar hingga workshop intim.'}
                                     </p>
-                                    <p className="leading-relaxed">
-                                        Fokus kami adalah kualitas, kreativitas, dan kepuasan peserta. Setiap event yang kami selenggarakan
-                                        dirancang dengan detail untuk memberikan pengalaman terbaik.
-                                    </p>
+                                    {!vendor.about && (
+                                        <p className="leading-relaxed">
+                                            Fokus kami adalah kualitas, kreativitas, dan kepuasan peserta. Setiap event yang kami selenggarakan dirancang dengan detail untuk memberikan pengalaman terbaik.
+                                        </p>
+                                    )}
 
                                     <div className="flex flex-wrap gap-2 pt-2">
                                         {['Musik', 'Workshop', 'Konferensi', 'Festival', 'Networking'].map((tag) => (

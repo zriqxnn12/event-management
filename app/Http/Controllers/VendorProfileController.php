@@ -18,6 +18,8 @@ class VendorProfileController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'username' => $user->username,
+                'avatar' => $user->avatar,
+                'about' => $user->about,
                 'role' => $user->role,
                 'memberSince' => $user->created_at?->format('F Y') ?? 'Baru Bergabung',
             ],

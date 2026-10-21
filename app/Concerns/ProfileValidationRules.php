@@ -19,7 +19,30 @@ trait ProfileValidationRules
             'name' => $this->nameRules(),
             'email' => $this->emailRules($userId),
             'username' => $this->usernameRules($userId),
+            'about' => $this->aboutRules(),
+            'avatar' => $this->avatarRules(),
+            'remove_avatar' => ['nullable', 'boolean'],
         ];
+    }
+
+    /**
+     * Get the validation rules used to validate user about description.
+     *
+     * @return array<int, ValidationRule|array<mixed>|string>
+     */
+    protected function aboutRules(): array
+    {
+        return ['nullable', 'string', 'max:1000'];
+    }
+
+    /**
+     * Get the validation rules used to validate user avatar.
+     *
+     * @return array<int, ValidationRule|array<mixed>|string>
+     */
+    protected function avatarRules(): array
+    {
+        return ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'];
     }
 
     /**
