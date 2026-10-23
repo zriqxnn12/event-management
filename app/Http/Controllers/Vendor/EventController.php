@@ -55,15 +55,15 @@ class EventController extends Controller
             $slug = Event::generateUniqueSlug($validated['title']);
 
             // Handle cover image upload
-            $coverImagePath = null;
             if ($request->hasFile('cover_image')) {
-                $coverImagePath = $request->file('cover_image')->store('events/covers', 'public');
+                $validated['cover_image'] = $request->file('cover_image')->store('events/covers', 'public');
+            } else {
+                $validated['cover_image'] = null;
             }
 
             $event = Event::create([
                 'user_id' => Auth::id(),
                 'slug' => $slug,
-                'cover_image' => $coverImagePath,
                 ...$this->extractEventFields($validated),
             ]);
 

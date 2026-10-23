@@ -32,6 +32,7 @@ import {
     CheckCircle2,
     XCircle,
     ChevronRight,
+    ZoomIn,
 } from 'lucide-react';
 import {
     index as eventsIndex,
@@ -133,6 +134,7 @@ export default function ShowEvent({ event }: Props) {
     setLayoutProps({ breadcrumbs });
 
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [imageModalOpen, setImageModalOpen] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const statusCfg = STATUS_BADGE[event.status];
     const isOffline = event.type === 'offline' || event.type === 'hybrid';
@@ -198,12 +200,28 @@ export default function ShowEvent({ event }: Props) {
 
                 {/* ── Cover ── */}
                 {event.cover_image && (
-                    <div className="h-52 w-full overflow-hidden border-2 border-foreground sm:h-72">
+                    <div
+                        className="group relative h-52 w-full cursor-pointer overflow-hidden border-2 border-foreground sm:h-72"
+                        onClick={() => setImageModalOpen(true)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                setImageModalOpen(true);
+                            }
+                        }}
+                        title="Klik untuk melihat gambar penuh"
+                    >
                         <img
                             src={`/storage/${event.cover_image}`}
                             alt={event.title}
-                            className="size-full object-cover"
+                            className="size-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
                         />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/35 opacity-0 transition-opacity duration-200 group-hover:opacity-100 backdrop-blur-[1px]">
+                            <span className="inline-flex items-center gap-2 border-2 border-foreground bg-background px-3.5 py-1.5 text-xs font-bold text-foreground shadow-xs">
+                                <ZoomIn className="size-4" /> Klik untuk melihat gambar penuh
+                            </span>
+                        </div>
                     </div>
                 )}
 
@@ -515,7 +533,7 @@ export default function ShowEvent({ event }: Props) {
                     <p className="text-sm text-foreground/80">
                         Apakah Anda yakin ingin menghapus event <strong className="text-foreground">"{event.title}"</strong>? Seluruh data tiket, kupon, speaker, dan agenda yang berkaitan akan dihapus secara permanen.
                     </p>
-                    <DialogFooter className="gap-2 sm:gap-0">
+                    <DialogFooter className="gap-2">
                         <Button
                             variant="outline"
                             className="border-2 border-foreground font-bold"
@@ -535,6 +553,34 @@ export default function ShowEvent({ event }: Props) {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* Modal Gambar Cover Penuh */}
+            {event.cover_image && (
+                <Dialog open={imageModalOpen} onOpenChange={setImageModalOpen}>
+                    <DialogContent className="max-w-4xl p-2 sm:p-4 border-2 border-foreground bg-background">
+                        <DialogHeader className="p-2 pb-0">
+                            <DialogTitle className="text-base font-black truncate pr-6">{event.title}</DialogTitle>
+                        </DialogHeader>
+                        <div className="relative mt-2 max-h-[75vh] w-full overflow-auto flex items-center justify-center rounded-md border border-foreground/20 bg-muted/30 p-1">
+                            <img
+                                src={`/storage/${event.cover_image}`}
+                                alt={event.title}
+                                className="max-h-[72vh] w-auto max-w-full rounded object-contain shadow-xs"
+                            />
+                        </div>
+                        <div className="flex items-center justify-between px-2 pt-2 text-xs">
+                            <a
+                                href={`/storage/${event.cover_image}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 font-bold text-foreground hover:underline"
+                            >
+                                <ExternalLink className="size-3.5" /> Buka Tab Baru
+                            </a>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+            )}
         </>
     );
 }
