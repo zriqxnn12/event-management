@@ -72,6 +72,11 @@ class EventController extends Controller
             return $event;
         });
 
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => "Event \"{$event->title}\" berhasil dibuat!",
+        ]);
+
         return redirect()->route('vendor.events.index')
             ->with('success', "Event \"{$event->title}\" berhasil dibuat!");
     }
@@ -134,6 +139,11 @@ class EventController extends Controller
             $this->syncRelated($event, $validated);
         });
 
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => "Event \"{$event->title}\" berhasil diperbarui!",
+        ]);
+
         return redirect()->route('vendor.events.index')
             ->with('success', "Event \"{$event->title}\" berhasil diperbarui!");
     }
@@ -155,6 +165,11 @@ class EventController extends Controller
 
             $event->delete();
         });
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => "Event \"{$title}\" berhasil dihapus.",
+        ]);
 
         return redirect()->route('vendor.events.index')
             ->with('success', "Event \"{$title}\" berhasil dihapus.");

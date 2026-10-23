@@ -1,9 +1,19 @@
 import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import {
+    AlertTriangle,
     ArrowLeft,
     CalendarDays,
     MapPin,
@@ -122,15 +132,24 @@ export default function ShowEvent({ event }: Props) {
 
     setLayoutProps({ breadcrumbs });
 
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [deleting, setDeleting] = useState(false);
     const statusCfg = STATUS_BADGE[event.status];
     const isOffline = event.type === 'offline' || event.type === 'hybrid';
     const isOnline = event.type === 'online' || event.type === 'hybrid';
 
-    const handleDelete = () => {
-        if (!confirm(`Hapus event "${event.title}"? Tindakan ini tidak dapat dibatalkan.`)) return;
+    const handleConfirmDelete = () => {
+        setDeleting(true);
         router.delete(eventsDestroy({ event: event.id }).url, {
-            onSuccess: () => toast.success(`Event "${event.title}" berhasil dihapus.`),
-            onError: () => toast.error('Gagal menghapus event.'),
+            onSuccess: () => {
+                setDeleteDialogOpen(false);
+                setDeleting(false);
+                toast.success(`Event "${event.title}" berhasil dihapus.`);
+            },
+            onError: () => {
+                setDeleting(false);
+                toast.error('Gagal menghapus event.');
+            },
         });
     };
 
@@ -169,7 +188,8 @@ export default function ShowEvent({ event }: Props) {
                         <Button
                             variant="outline"
                             className="border-2 border-destructive text-destructive font-bold shadow-xs hover:bg-destructive/10"
-                            onClick={handleDelete}
+                            onClick={() => setDeleteDialogOpen(true)}
+                            disabled={deleting}
                         >
                             <Trash2 className="size-4" /> Hapus
                         </Button>
@@ -475,6 +495,46 @@ export default function ShowEvent({ event }: Props) {
                     </div>
                 </div>
             </div>
+
+            {/* Dialog Konfirmasi Hapus */}
+            <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <DialogContent className="border-2 border-foreground sm:max-w-md">
+                    <DialogHeader>
+                        <div className="flex items-center gap-3">
+                            <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-destructive border border-destructive/20">
+                                <AlertTriangle className="size-5" />
+                            </div>
+                            <div>
+                                <DialogTitle className="text-base font-bold">Hapus Event</DialogTitle>
+                                <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                                    Tindakan ini tidak dapat dibatalkan.
+                                </DialogDescription>
+                            </div>
+                        </div>
+                    </DialogHeader>
+                    <p className="text-sm text-foreground/80">
+                        Apakah Anda yakin ingin menghapus event <strong className="text-foreground">"{event.title}"</strong>? Seluruh data tiket, kupon, speaker, dan agenda yang berkaitan akan dihapus secara permanen.
+                    </p>
+                    <DialogFooter className="gap-2 sm:gap-0">
+                        <Button
+                            variant="outline"
+                            className="border-2 border-foreground font-bold"
+                            onClick={() => setDeleteDialogOpen(false)}
+                            disabled={deleting}
+                        >
+                            Batal
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            className="border-2 border-destructive font-bold"
+                            onClick={handleConfirmDelete}
+                            disabled={deleting}
+                        >
+                            {deleting ? 'Menghapus...' : 'Ya, Hapus Event'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </>
     );
 }

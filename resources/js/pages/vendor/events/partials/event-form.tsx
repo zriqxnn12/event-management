@@ -5,7 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import InputError from '@/components/input-error';
+import { toast } from 'sonner';
 import {
     Select,
     SelectContent,
@@ -14,6 +16,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import {
+    AlertCircle,
     CalendarDays,
     MapPin,
     Monitor,
@@ -251,6 +254,16 @@ export default function EventForm({ initialData = {}, action, method, submitLabe
         submit(method, action, {
             forceFormData: true,
             data: formData,
+            onError: (errs) => {
+                const keys = Object.keys(errs);
+                if (keys.length > 0) {
+                    toast.error(
+                        keys.length === 1
+                            ? errs[keys[0]]
+                            : `Terdapat ${keys.length} kesalahan validasi pada formulir. Silakan periksa kolom yang ditandai merah.`
+                    );
+                }
+            },
         });
     };
 
@@ -301,6 +314,16 @@ export default function EventForm({ initialData = {}, action, method, submitLabe
 
     return (
         <form onSubmit={handleSubmit} encType="multipart/form-data" className="flex flex-col gap-4">
+            {Object.keys(errors).length > 0 && (
+                <Alert variant="destructive" className="border-2 border-destructive bg-destructive/10 text-destructive shadow-xs">
+                    <AlertCircle className="size-4" />
+                    <AlertTitle className="font-bold">Gagal Menyimpan Event</AlertTitle>
+                    <AlertDescription className="text-xs">
+                        Terdapat kesalahan validasi pada formulir. Silakan periksa kembali bagian yang memiliki pesan error berwarna merah di bawah ini.
+                    </AlertDescription>
+                </Alert>
+            )}
+
             {/* ── Section: Informasi Dasar ── */}
             <Section icon={CalendarDays} title="Informasi Dasar" description="Judul, deskripsi, kategori, dan tipe event">
                 <div className="grid gap-5 sm:grid-cols-2">

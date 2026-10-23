@@ -1,10 +1,21 @@
-import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
+import { Head, Link, router, setLayoutProps, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import {
+    AlertTriangle,
     CalendarDays,
+    CheckCircle2,
     MapPin,
     Monitor,
     Globe,
@@ -17,6 +28,7 @@ import {
     Users,
     Clock,
     MoreVertical,
+    X,
 } from 'lucide-react';
 import {
     DropdownMenu,
@@ -100,14 +112,18 @@ function EventTypeIcon({ type }: { type: Event['type'] }) {
 
 function EventCard({ event }: { event: Event }) {
     const [deleting, setDeleting] = useState(false);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const statusCfg = STATUS_CONFIG[event.status];
     const typeCfg = TYPE_CONFIG[event.type];
 
-    const handleDelete = () => {
-        if (!confirm(`Hapus event "${event.title}"? Tindakan ini tidak dapat dibatalkan.`)) return;
+    const handleConfirmDelete = () => {
         setDeleting(true);
         router.delete(eventsDestroy({ event: event.id }).url, {
-            onSuccess: () => toast.success(`Event "${event.title}" berhasil dihapus.`),
+            onSuccess: () => {
+                setDeleteDialogOpen(false);
+                setDeleting(false);
+                toast.success(`Event "${event.title}" berhasil dihapus.`);
+            },
             onError: () => {
                 toast.error('Gagal menghapus event.');
                 setDeleting(false);
@@ -123,124 +139,169 @@ function EventCard({ event }: { event: Event }) {
         });
 
     return (
-        <Card className="group relative border-2 border-foreground transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
-            {/* Cover */}
-            <div className="relative h-40 overflow-hidden border-b-2 border-foreground bg-muted/40">
-                {event.cover_image ? (
-                    <img
-                        src={`/storage/${event.cover_image}`}
-                        alt={event.title}
-                        className="size-full object-cover"
-                    />
-                ) : (
-                    <div className="flex size-full items-center justify-center">
-                        <CalendarDays className="size-16 text-foreground/10" />
+        <>
+            <Card className="group relative border-2 border-foreground transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+                {/* Cover */}
+                <div className="relative h-40 overflow-hidden border-b-2 border-foreground bg-muted/40">
+                    {event.cover_image ? (
+                        <img
+                            src={`/storage/${event.cover_image}`}
+                            alt={event.title}
+                            className="size-full object-cover"
+                        />
+                    ) : (
+                        <div className="flex size-full items-center justify-center">
+                            <CalendarDays className="size-16 text-foreground/10" />
+                        </div>
+                    )}
+                    <div className="absolute top-3 left-3 flex items-center gap-2">
+                        <Badge
+                            variant={statusCfg.variant}
+                            className={`border-2 border-foreground text-xs font-bold shadow-xs ${statusCfg.className}`}
+                        >
+                            {statusCfg.label}
+                        </Badge>
                     </div>
-                )}
-                <div className="absolute top-3 left-3 flex items-center gap-2">
-                    <Badge
-                        variant={statusCfg.variant}
-                        className={`border-2 border-foreground text-xs font-bold shadow-xs ${statusCfg.className}`}
-                    >
-                        {statusCfg.label}
-                    </Badge>
+                    <div className="absolute top-3 right-3">
+                        <Badge variant="outline" className="border-2 border-foreground bg-background/90 text-xs font-bold shadow-xs backdrop-blur-sm">
+                            <EventTypeIcon type={event.type} />
+                            <span className="ml-1">{typeCfg.label}</span>
+                        </Badge>
+                    </div>
                 </div>
-                <div className="absolute top-3 right-3">
-                    <Badge variant="outline" className="border-2 border-foreground bg-background/90 text-xs font-bold shadow-xs backdrop-blur-sm">
-                        <EventTypeIcon type={event.type} />
-                        <span className="ml-1">{typeCfg.label}</span>
-                    </Badge>
-                </div>
-            </div>
 
-            <CardHeader className="pb-2 pt-4">
-                <div className="flex items-start justify-between gap-2">
-                    <h3 className="line-clamp-2 text-sm font-black leading-snug">{event.title}</h3>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="size-7 shrink-0">
-                                <MoreVertical className="size-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="border-2 border-foreground">
-                            <DropdownMenuItem asChild>
-                                <Link href={eventsShow({ event: event.id }).url} className="flex items-center gap-2 font-semibold">
-                                    <Eye className="size-4" /> Detail
-                                </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
-                                <Link href={eventsEdit({ event: event.id }).url} className="flex items-center gap-2 font-semibold">
-                                    <Pencil className="size-4" /> Edit
-                                </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                                className="flex items-center gap-2 font-semibold text-destructive focus:text-destructive"
-                                onClick={handleDelete}
-                                disabled={deleting}
-                            >
-                                <Trash2 className="size-4" /> Hapus
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </div>
-                <Badge variant="outline" className="w-fit border border-foreground/30 text-[10px] font-semibold text-muted-foreground">
-                    {event.category}
-                </Badge>
-            </CardHeader>
+                <CardHeader className="pb-2 pt-4">
+                    <div className="flex items-start justify-between gap-2">
+                        <h3 className="line-clamp-2 text-sm font-black leading-snug">{event.title}</h3>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="size-7 shrink-0">
+                                    <MoreVertical className="size-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="border-2 border-foreground">
+                                <DropdownMenuItem asChild>
+                                    <Link href={eventsShow({ event: event.id }).url} className="flex items-center gap-2 font-semibold">
+                                        <Eye className="size-4" /> Detail
+                                    </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                    <Link href={eventsEdit({ event: event.id }).url} className="flex items-center gap-2 font-semibold">
+                                        <Pencil className="size-4" /> Edit
+                                    </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                    className="flex items-center gap-2 font-semibold text-destructive focus:text-destructive cursor-pointer"
+                                    onSelect={(e) => {
+                                        e.preventDefault();
+                                        setDeleteDialogOpen(true);
+                                    }}
+                                    disabled={deleting}
+                                >
+                                    <Trash2 className="size-4" /> Hapus
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                    <Badge variant="outline" className="w-fit border border-foreground/30 text-[10px] font-semibold text-muted-foreground">
+                        {event.category}
+                    </Badge>
+                </CardHeader>
 
-            <CardContent className="flex flex-col gap-3 pt-0">
-                <div className="flex flex-col gap-1.5 text-xs text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                        <Clock className="size-3.5 shrink-0" />
-                        <span className="font-semibold">
-                            {formatDate(event.start_date)}
-                            {event.start_date !== event.end_date && ` — ${formatDate(event.end_date)}`}
+                <CardContent className="flex flex-col gap-3 pt-0">
+                    <div className="flex flex-col gap-1.5 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                            <Clock className="size-3.5 shrink-0" />
+                            <span className="font-semibold">
+                                {formatDate(event.start_date)}
+                                {event.start_date !== event.end_date && ` — ${formatDate(event.end_date)}`}
+                            </span>
+                        </div>
+                        {(event.type === 'offline' || event.type === 'hybrid') && event.location_name && (
+                            <div className="flex items-center gap-2">
+                                <MapPin className="size-3.5 shrink-0 text-orange-600" />
+                                <span className="truncate">{event.location_name}</span>
+                            </div>
+                        )}
+                        {(event.type === 'online' || event.type === 'hybrid') && event.online_platform && (
+                            <div className="flex items-center gap-2">
+                                <Monitor className="size-3.5 shrink-0 text-blue-600" />
+                                <span className="truncate capitalize">{event.online_platform}</span>
+                            </div>
+                        )}
+                        {event.max_attendees && (
+                            <div className="flex items-center gap-2">
+                                <Users className="size-3.5 shrink-0" />
+                                <span>Maks {event.max_attendees.toLocaleString('id-ID')} peserta</span>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="flex items-center gap-3 text-[11px] font-semibold text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                            <Ticket className="size-3.5" /> {event.tickets_count} tipe tiket
+                        </span>
+                        <span className="flex items-center gap-1">
+                            <Tag className="size-3.5" /> {event.coupons_count} kupon
                         </span>
                     </div>
-                    {(event.type === 'offline' || event.type === 'hybrid') && event.location_name && (
-                        <div className="flex items-center gap-2">
-                            <MapPin className="size-3.5 shrink-0 text-orange-600" />
-                            <span className="truncate">{event.location_name}</span>
-                        </div>
-                    )}
-                    {(event.type === 'online' || event.type === 'hybrid') && event.online_platform && (
-                        <div className="flex items-center gap-2">
-                            <Monitor className="size-3.5 shrink-0 text-blue-600" />
-                            <span className="truncate capitalize">{event.online_platform}</span>
-                        </div>
-                    )}
-                    {event.max_attendees && (
-                        <div className="flex items-center gap-2">
-                            <Users className="size-3.5 shrink-0" />
-                            <span>Maks {event.max_attendees.toLocaleString('id-ID')} peserta</span>
-                        </div>
-                    )}
-                </div>
 
-                <div className="flex items-center gap-3 text-[11px] font-semibold text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                        <Ticket className="size-3.5" /> {event.tickets_count} tipe tiket
-                    </span>
-                    <span className="flex items-center gap-1">
-                        <Tag className="size-3.5" /> {event.coupons_count} kupon
-                    </span>
-                </div>
+                    {/* <div className="flex gap-2 pt-1">
+                        <Button asChild size="sm" variant="outline" className="flex-1 border-2 border-foreground text-xs font-bold shadow-xs">
+                            <Link href={eventsEdit({ event: event.id }).url}>
+                                <Pencil className="size-3.5" /> Edit
+                            </Link>
+                        </Button>
+                        <Button asChild size="sm" className="flex-1 border-2 border-foreground text-xs font-bold shadow-xs">
+                            <Link href={eventsShow({ event: event.id }).url}>
+                                <Eye className="size-3.5" /> Detail
+                            </Link>
+                        </Button>
+                    </div> */}
+                </CardContent>
+            </Card>
 
-                <div className="flex gap-2 pt-1">
-                    <Button asChild size="sm" variant="outline" className="flex-1 border-2 border-foreground text-xs font-bold shadow-xs">
-                        <Link href={eventsEdit({ event: event.id }).url}>
-                            <Pencil className="size-3.5" /> Edit
-                        </Link>
-                    </Button>
-                    <Button asChild size="sm" className="flex-1 border-2 border-foreground text-xs font-bold shadow-xs">
-                        <Link href={eventsShow({ event: event.id }).url}>
-                            <Eye className="size-3.5" /> Detail
-                        </Link>
-                    </Button>
-                </div>
-            </CardContent>
-        </Card>
+            {/* Dialog Konfirmasi Hapus */}
+            <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <DialogContent className="border-2 border-foreground sm:max-w-md">
+                    <DialogHeader>
+                        <div className="flex items-center gap-3">
+                            <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-destructive border border-destructive/20">
+                                <AlertTriangle className="size-5" />
+                            </div>
+                            <div>
+                                <DialogTitle className="text-base font-bold">Hapus Event</DialogTitle>
+                                <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                                    Tindakan ini tidak dapat dibatalkan.
+                                </DialogDescription>
+                            </div>
+                        </div>
+                    </DialogHeader>
+                    <p className="text-sm text-foreground/80">
+                        Apakah Anda yakin ingin menghapus event <strong className="text-foreground">"{event.title}"</strong>? Seluruh data tiket, kupon, speaker, dan agenda yang berkaitan akan dihapus secara permanen.
+                    </p>
+                    <DialogFooter className="gap-2 sm:gap-0">
+                        <Button
+                            variant="outline"
+                            className="border-2 border-foreground font-bold"
+                            onClick={() => setDeleteDialogOpen(false)}
+                            disabled={deleting}
+                        >
+                            Batal
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            className="border-2 border-destructive font-bold"
+                            onClick={handleConfirmDelete}
+                            disabled={deleting}
+                        >
+                            {deleting ? 'Menghapus...' : 'Ya, Hapus Event'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </>
     );
 }
 
@@ -266,16 +327,61 @@ function EmptyState() {
 
 export default function EventsIndex({ events, filters }: Props) {
     setLayoutProps({ breadcrumbs });
+    const { flash } = usePage().props as unknown as { flash?: { success?: string; error?: string } };
+    const [dismissedFlash, setDismissedFlash] = useState(false);
 
     const handleStatusFilter = (status: string) => {
         router.get(eventsIndex().url, { status }, { preserveState: true, replace: true });
     };
+
+    const flashSuccess = !dismissedFlash && flash?.success;
+    const flashError = !dismissedFlash && flash?.error;
 
     return (
         <>
             <Head title="Manajemen Event" />
 
             <div className="flex flex-col gap-6 p-4 sm:p-6">
+                {/* Flash Alert Banner */}
+                {flashSuccess && (
+                    <Alert className="border-2 border-emerald-600 bg-emerald-50 text-emerald-900 shadow-xs dark:bg-emerald-950/40 dark:text-emerald-200">
+                        <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400" />
+                        <div className="flex w-full items-center justify-between">
+                            <div>
+                                <AlertTitle className="font-bold">Berhasil</AlertTitle>
+                                <AlertDescription className="text-xs">{flashSuccess}</AlertDescription>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setDismissedFlash(true)}
+                                className="text-emerald-700 hover:text-emerald-950 dark:text-emerald-300 dark:hover:text-emerald-100"
+                                aria-label="Tutup alert"
+                            >
+                                <X className="size-4" />
+                            </button>
+                        </div>
+                    </Alert>
+                )}
+                {flashError && (
+                    <Alert variant="destructive" className="border-2 border-destructive bg-destructive/10 text-destructive shadow-xs">
+                        <AlertTriangle className="size-4" />
+                        <div className="flex w-full items-center justify-between">
+                            <div>
+                                <AlertTitle className="font-bold">Terjadi Kesalahan</AlertTitle>
+                                <AlertDescription className="text-xs">{flashError}</AlertDescription>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setDismissedFlash(true)}
+                                className="text-destructive hover:opacity-80"
+                                aria-label="Tutup alert"
+                            >
+                                <X className="size-4" />
+                            </button>
+                        </div>
+                    </Alert>
+                )}
+
                 {/* Header */}
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
