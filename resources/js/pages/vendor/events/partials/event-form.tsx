@@ -220,7 +220,7 @@ export default function EventForm({ initialData = {}, action, method, submitLabe
     const [tagInput, setTagInput] = useState('');
     const [perkInputs, setPerkInputs] = useState<Record<string, string>>({});
 
-    const { data, setData, submit, processing, errors } = useForm<EventFormData>({
+    const { data, setData, submit, processing, errors, transform } = useForm<EventFormData>({
         title: '',
         description: '',
         category: '',
@@ -248,12 +248,26 @@ export default function EventForm({ initialData = {}, action, method, submitLabe
         ...initialData,
     });
 
-    const handleSubmit = (e: React.FormEvent, statusOverride?: string) => {
-        e.preventDefault();
-        const formData = statusOverride ? { ...data, status: statusOverride as EventFormData['status'] } : data;
-        submit(method, action, {
+    const handleSubmit = (e?: React.FormEvent, statusOverride?: EventFormData['status']) => {
+        if (e) {
+            e.preventDefault();
+        }
+
+        const effectiveStatus = statusOverride ?? data.status;
+        setData('status', effectiveStatus);
+
+        transform((currData) => ({
+            ...currData,
+            status: effectiveStatus,
+            ...(method === 'put' || method === 'patch' ? { _method: method } : {}),
+        }));
+
+        // Dalam Laravel / PHP built-in server, request multipart/form-data via PUT tidak dibaca oleh PHP.
+        // Gunakan method spoofing (POST dengan _method: 'put') agar field form dan file terkirim dengan sempurna.
+        const submitMethod = method === 'put' || method === 'patch' ? 'post' : method;
+
+        submit(submitMethod, action, {
             forceFormData: true,
-            data: formData,
             onError: (errs) => {
                 const keys = Object.keys(errs);
                 if (keys.length > 0) {
@@ -314,6 +328,8 @@ export default function EventForm({ initialData = {}, action, method, submitLabe
 
     return (
         <form onSubmit={handleSubmit} encType="multipart/form-data" className="flex flex-col gap-4">
+            <input type="hidden" name="status" value={data.status} />
+            {(method === 'put' || method === 'patch') && <input type="hidden" name="_method" value={method} />}
             {Object.keys(errors).length > 0 && (
                 <Alert variant="destructive" className="border-2 border-destructive bg-destructive/10 text-destructive shadow-xs">
                     <AlertCircle className="size-4" />
@@ -394,18 +410,31 @@ export default function EventForm({ initialData = {}, action, method, submitLabe
 
                     {/* Status */}
                     <div className="flex flex-col gap-1.5">
-                        <Label className="font-bold">Status</Label>
-                        <Select value={data.status} onValueChange={(v) => setData('status', v as EventFormData['status'])}>
-                            <SelectTrigger className="border-2 border-foreground/40 focus:border-foreground">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="border-2 border-foreground">
-                                <SelectItem value="draft">Draft</SelectItem>
-                                <SelectItem value="published">Published</SelectItem>
-                                <SelectItem value="cancelled">Dibatalkan</SelectItem>
-                                <SelectItem value="completed">Selesai</SelectItem>
-                            </SelectContent>
-                        </Select>
+                        <Label className="font-bold">Status Event <span className="text-destructive">*</span></Label>
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                            {(
+                                [
+                                    { key: 'draft', label: 'Draft' },
+                                    { key: 'published', label: 'Published' },
+                                    { key: 'cancelled', label: 'Dibatalkan' },
+                                    { key: 'completed', label: 'Selesai' },
+                                ] as const
+                            ).map((s) => (
+                                <button
+                                    key={s.key}
+                                    type="button"
+                                    onClick={() => setData('status', s.key)}
+                                    className={`border-2 py-2 text-xs font-bold uppercase tracking-wide transition-all ${
+                                        data.status === s.key
+                                            ? 'border-foreground bg-foreground text-background shadow-xs'
+                                            : 'border-foreground/30 text-muted-foreground hover:border-foreground'
+                                    }`}
+                                >
+                                    {s.label}
+                                </button>
+                            ))}
+                        </div>
+                        <InputError message={errors.status} />
                     </div>
 
                     {/* Max attendees */}
@@ -1227,10 +1256,7 @@ export default function EventForm({ initialData = {}, action, method, submitLabe
             </Section>
 
             {/* ── Submit bar ── */}
-            <div className="sticky bottom-0 z-40 flex items-center justify-between gap-4 border-t-2 border-foreground bg-background/95 px-5 py-4 backdrop-blur-md">
-                <p className="text-xs text-muted-foreground">
-                    Simpan sebagai draft untuk melanjutkan nanti, atau publish langsung.
-                </p>
+            <div className="sticky bottom-0 z-40 flex items-center justify-end gap-4 border-t-2 border-foreground bg-background/95 px-5 py-4 backdrop-blur-md">
                 <div className="flex gap-2">
                     <Button
                         type="button"
@@ -1239,20 +1265,17 @@ export default function EventForm({ initialData = {}, action, method, submitLabe
                         disabled={processing}
                         onClick={(e) => {
                             setData('status', 'draft');
-                            handleSubmit(e as React.FormEvent, 'draft');
+                            handleSubmit(e, 'draft');
                         }}
                     >
                         <Save className="size-4" />
                         Simpan Draft
                     </Button>
                     <Button
-                        type="button"
+                        type="submit"
                         className="border-2 border-foreground font-bold shadow-xs"
                         disabled={processing}
-                        onClick={(e) => {
-                            setData('status', 'published');
-                            handleSubmit(e as React.FormEvent, 'published');
-                        }}
+                        onClick={() => handleSubmit(undefined, data.status)}
                     >
                         <Send className="size-4" />
                         {processing ? 'Menyimpan...' : submitLabel}

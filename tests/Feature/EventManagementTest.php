@@ -86,3 +86,80 @@ test('vendor can update event cover image', function () {
     Storage::disk('public')->assertMissing($oldPath);
     Storage::disk('public')->assertExists($event->cover_image);
 });
+
+test('vendor can create event with draft or cancelled status', function () {
+    $vendor = User::factory()->create(['role' => 'vendor']);
+
+    $payload = [
+        'title' => 'Event Draft Baru',
+        'category' => 'Edukasi',
+        'type' => 'offline',
+        'status' => 'draft',
+        'start_date' => now()->addDays(10)->format('Y-m-d H:i:s'),
+        'end_date' => now()->addDays(11)->format('Y-m-d H:i:s'),
+        'location_name' => 'Ruang Kelas A',
+    ];
+
+    $response = $this->actingAs($vendor)->post(route('vendor.events.store'), $payload);
+
+    $response->assertRedirect(route('vendor.events.index'));
+
+    $event = Event::where('title', 'Event Draft Baru')->first();
+    expect($event)->not->toBeNull();
+    expect($event->status)->toBe('draft');
+});
+
+test('vendor can update event status to cancelled or completed', function () {
+    $vendor = User::factory()->create(['role' => 'vendor']);
+
+    $event = Event::factory()->create([
+        'user_id' => $vendor->id,
+        'title' => 'Event Aktif',
+        'status' => 'published',
+    ]);
+
+    $payload = [
+        'title' => 'Event Aktif',
+        'category' => $event->category,
+        'type' => $event->type,
+        'status' => 'cancelled',
+        'start_date' => $event->start_date->format('Y-m-d H:i:s'),
+        'end_date' => $event->end_date->format('Y-m-d H:i:s'),
+        'location_name' => $event->location_name ?? 'Lokasi A',
+    ];
+
+    $response = $this->actingAs($vendor)->put(route('vendor.events.update', $event), $payload);
+
+    $response->assertRedirect(route('vendor.events.index'));
+
+    $event->refresh();
+    expect($event->status)->toBe('cancelled');
+});
+
+test('vendor can update event status to draft using method spoofing POST with _method PUT', function () {
+    $vendor = User::factory()->create(['role' => 'vendor']);
+
+    $event = Event::factory()->create([
+        'user_id' => $vendor->id,
+        'title' => 'Event Aktif Ke Draft',
+        'status' => 'published',
+    ]);
+
+    $payload = [
+        '_method' => 'PUT',
+        'title' => 'Event Aktif Ke Draft',
+        'category' => $event->category,
+        'type' => $event->type,
+        'status' => 'draft',
+        'start_date' => $event->start_date->format('Y-m-d H:i:s'),
+        'end_date' => $event->end_date->format('Y-m-d H:i:s'),
+        'location_name' => $event->location_name ?? 'Lokasi A',
+    ];
+
+    $response = $this->actingAs($vendor)->post(route('vendor.events.update', $event), $payload);
+
+    $response->assertRedirect(route('vendor.events.index'));
+
+    $event->refresh();
+    expect($event->status)->toBe('draft');
+});

@@ -11,7 +11,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Vendor event management
     Route::prefix('vendor')->name('vendor.')->group(function () {
-        Route::resource('events', EventController::class)->except(['show']);
+        Route::match(['put', 'patch', 'post'], 'events/{event}', [EventController::class, 'update'])->name('events.update');
+        Route::resource('events', EventController::class)->except(['show', 'update']);
         Route::get('events/{event}', [EventController::class, 'show'])->name('events.show');
     });
 });

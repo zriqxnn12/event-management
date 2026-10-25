@@ -41,7 +41,7 @@ export default function CreateEvent() {
                 <EventForm
                     action={eventsStore().url}
                     method="post"
-                    submitLabel="Publish Event"
+                    submitLabel="Simpan Event"
                 />
             </div>
         </>

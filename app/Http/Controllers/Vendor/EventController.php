@@ -61,10 +61,13 @@ class EventController extends Controller
                 $validated['cover_image'] = null;
             }
 
+            $eventData = $this->extractEventFields($validated);
+            $eventData['status'] = $validated['status'];
+
             $event = Event::create([
                 'user_id' => Auth::id(),
                 'slug' => $slug,
-                ...$this->extractEventFields($validated),
+                ...$eventData,
             ]);
 
             $this->syncRelated($event, $validated);
@@ -134,7 +137,9 @@ class EventController extends Controller
                 $validated['slug'] = Event::generateUniqueSlug($validated['title'], $event->id);
             }
 
-            $event->update($this->extractEventFields($validated));
+            $eventData = $this->extractEventFields($validated);
+            $eventData['status'] = $validated['status'];
+            $event->update($eventData);
 
             $this->syncRelated($event, $validated);
         });
