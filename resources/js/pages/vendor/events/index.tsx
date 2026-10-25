@@ -2,7 +2,6 @@ import { Head, Link, router, setLayoutProps, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
     Dialog,
@@ -44,45 +43,13 @@ import {
     destroy as eventsDestroy,
     show as eventsShow,
 } from '@/actions/App/Http/Controllers/Vendor/EventController';
-import type { BreadcrumbItem } from '@/types';
+import type { BreadcrumbItem, Event, PaginatedEvents, EventsIndexProps as Props } from '@/types';
 import { toast } from 'sonner';
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Dashboard', href: '/dashboard' },
     { title: 'Event', href: eventsIndex().url },
 ];
-
-type Event = {
-    id: number;
-    title: string;
-    slug: string;
-    category: string;
-    type: 'online' | 'offline' | 'hybrid';
-    status: 'draft' | 'published' | 'cancelled' | 'completed';
-    start_date: string;
-    end_date: string;
-    location_name?: string | null;
-    online_platform?: string | null;
-    max_attendees?: number | null;
-    cover_image?: string | null;
-    tickets_count: number;
-    coupons_count: number;
-};
-
-type PaginatedEvents = {
-    data: Event[];
-    current_page: number;
-    last_page: number;
-    total: number;
-    per_page: number;
-    next_page_url: string | null;
-    prev_page_url: string | null;
-};
-
-type Props = {
-    events: PaginatedEvents;
-    filters: { status: string };
-};
 
 const STATUS_TABS = [
     { key: 'all', label: 'Semua' },
@@ -110,7 +77,7 @@ function EventTypeIcon({ type }: { type: Event['type'] }) {
     return <cfg.icon className={`size-3.5 shrink-0 ${cfg.className}`} />;
 }
 
-function EventCard({ event }: { event: Event }) {
+function EventTableRow({ event }: { event: Event }) {
     const [deleting, setDeleting] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const statusCfg = STATUS_CONFIG[event.status];
@@ -140,167 +107,179 @@ function EventCard({ event }: { event: Event }) {
 
     return (
         <>
-            <Card className="group relative border-2 border-foreground transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
-                {/* Cover */}
-                <div className="relative h-40 overflow-hidden border-b-2 border-foreground bg-muted/40">
-                    {event.cover_image ? (
-                        <img
-                            src={`/storage/${event.cover_image}`}
-                            alt={event.title}
-                            className="size-full object-cover"
-                        />
-                    ) : (
-                        <div className="flex size-full items-center justify-center">
-                            <CalendarDays className="size-16 text-foreground/10" />
+            <tr className="transition-colors hover:bg-muted/40">
+                {/* Event Title & Cover */}
+                <td className="px-4 py-3.5 align-middle">
+                    <div className="flex items-center gap-3">
+                        <div className="relative size-12 shrink-0 overflow-hidden rounded-md border-2 border-foreground bg-muted/40">
+                            {event.cover_image ? (
+                                <img
+                                    src={`/storage/${event.cover_image}`}
+                                    alt={event.title}
+                                    className="size-full object-cover"
+                                />
+                            ) : (
+                                <div className="flex size-full items-center justify-center">
+                                    <CalendarDays className="size-6 text-foreground/20" />
+                                </div>
+                            )}
                         </div>
-                    )}
-                    <div className="absolute top-3 left-3 flex items-center gap-2">
-                        <Badge
-                            variant={statusCfg.variant}
-                            className={`border-2 border-foreground text-xs font-bold shadow-xs ${statusCfg.className}`}
-                        >
-                            {statusCfg.label}
-                        </Badge>
+                        <div className="flex min-w-0 flex-col">
+                            <Link
+                                href={eventsShow({ event: event.id }).url}
+                                className="line-clamp-1 font-bold hover:underline"
+                                title={event.title}
+                            >
+                                {event.title}
+                            </Link>
+                            <span className="text-xs font-semibold text-muted-foreground">
+                                {event.category}
+                            </span>
+                        </div>
                     </div>
-                    <div className="absolute top-3 right-3">
-                        <Badge variant="outline" className="border-2 border-foreground bg-background/90 text-xs font-bold shadow-xs backdrop-blur-sm">
+                </td>
+
+                {/* Tipe & Lokasi / Platform */}
+                <td className="px-4 py-3.5 align-middle">
+                    <div className="flex flex-col gap-1">
+                        <Badge
+                            variant="outline"
+                            className="w-fit border-2 border-foreground bg-background/80 text-xs font-bold shadow-2xs backdrop-blur-sm"
+                        >
                             <EventTypeIcon type={event.type} />
                             <span className="ml-1">{typeCfg.label}</span>
                         </Badge>
-                    </div>
-                </div>
-
-                <CardHeader className="pb-2 pt-4">
-                    <div className="flex items-start justify-between gap-2">
-                        <h3 className="line-clamp-2 text-sm font-black leading-snug">{event.title}</h3>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="size-7 shrink-0">
-                                    <MoreVertical className="size-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="border-2 border-foreground">
-                                <DropdownMenuItem asChild>
-                                    <Link href={eventsShow({ event: event.id }).url} className="flex items-center gap-2 font-semibold">
-                                        <Eye className="size-4" /> Detail
-                                    </Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem asChild>
-                                    <Link href={eventsEdit({ event: event.id }).url} className="flex items-center gap-2 font-semibold">
-                                        <Pencil className="size-4" /> Edit
-                                    </Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                    className="flex items-center gap-2 font-semibold text-destructive focus:text-destructive cursor-pointer"
-                                    onSelect={(e) => {
-                                        e.preventDefault();
-                                        setDeleteDialogOpen(true);
-                                    }}
-                                    disabled={deleting}
-                                >
-                                    <Trash2 className="size-4" /> Hapus
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </div>
-                    <Badge variant="outline" className="w-fit border border-foreground/30 text-[10px] font-semibold text-muted-foreground">
-                        {event.category}
-                    </Badge>
-                </CardHeader>
-
-                <CardContent className="flex flex-col gap-3 pt-0">
-                    <div className="flex flex-col gap-1.5 text-xs text-muted-foreground">
-                        <div className="flex items-center gap-2">
-                            <Clock className="size-3.5 shrink-0" />
-                            <span className="font-semibold">
-                                {formatDate(event.start_date)}
-                                {event.start_date !== event.end_date && ` — ${formatDate(event.end_date)}`}
-                            </span>
-                        </div>
                         {(event.type === 'offline' || event.type === 'hybrid') && event.location_name && (
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground" title={event.location_name}>
                                 <MapPin className="size-3.5 shrink-0 text-orange-600" />
-                                <span className="truncate">{event.location_name}</span>
+                                <span className="max-w-[180px] truncate">{event.location_name}</span>
                             </div>
                         )}
                         {(event.type === 'online' || event.type === 'hybrid') && event.online_platform && (
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                                 <Monitor className="size-3.5 shrink-0 text-blue-600" />
-                                <span className="truncate capitalize">{event.online_platform}</span>
+                                <span className="max-w-[180px] truncate capitalize">{event.online_platform}</span>
                             </div>
                         )}
                         {event.max_attendees && (
-                            <div className="flex items-center gap-2">
-                                <Users className="size-3.5 shrink-0" />
-                                <span>Maks {event.max_attendees.toLocaleString('id-ID')} peserta</span>
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                <Users className="size-3 shrink-0" />
+                                <span>Maks {event.max_attendees.toLocaleString('id-ID')}</span>
                             </div>
                         )}
                     </div>
+                </td>
 
-                    <div className="flex items-center gap-3 text-[11px] font-semibold text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                            <Ticket className="size-3.5" /> {event.tickets_count} tipe tiket
-                        </span>
-                        <span className="flex items-center gap-1">
-                            <Tag className="size-3.5" /> {event.coupons_count} kupon
+                {/* Jadwal */}
+                <td className="px-4 py-3.5 align-middle whitespace-nowrap text-xs">
+                    <div className="flex items-center gap-1.5 font-semibold">
+                        <Clock className="size-3.5 shrink-0 text-muted-foreground" />
+                        <span>
+                            {formatDate(event.start_date)}
+                            {event.start_date !== event.end_date && ` — ${formatDate(event.end_date)}`}
                         </span>
                     </div>
+                </td>
 
-                    {/* <div className="flex gap-2 pt-1">
-                        <Button asChild size="sm" variant="outline" className="flex-1 border-2 border-foreground text-xs font-bold shadow-xs">
-                            <Link href={eventsEdit({ event: event.id }).url}>
-                                <Pencil className="size-3.5" /> Edit
-                            </Link>
-                        </Button>
-                        <Button asChild size="sm" className="flex-1 border-2 border-foreground text-xs font-bold shadow-xs">
-                            <Link href={eventsShow({ event: event.id }).url}>
-                                <Eye className="size-3.5" /> Detail
-                            </Link>
-                        </Button>
-                    </div> */}
-                </CardContent>
-            </Card>
+                {/* Status */}
+                <td className="px-4 py-3.5 align-middle">
+                    <Badge
+                        variant={statusCfg.variant}
+                        className={`border-2 border-foreground text-xs font-bold shadow-2xs ${statusCfg.className}`}
+                    >
+                        {statusCfg.label}
+                    </Badge>
+                </td>
 
-            {/* Dialog Konfirmasi Hapus */}
-            <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-                <DialogContent className="border-2 border-foreground sm:max-w-md">
-                    <DialogHeader>
-                        <div className="flex items-center gap-3">
-                            <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-destructive border border-destructive/20">
-                                <AlertTriangle className="size-5" />
-                            </div>
-                            <div>
-                                <DialogTitle className="text-base font-bold">Hapus Event</DialogTitle>
-                                <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                                    Tindakan ini tidak dapat dibatalkan.
-                                </DialogDescription>
-                            </div>
-                        </div>
-                    </DialogHeader>
-                    <p className="text-sm text-foreground/80">
-                        Apakah Anda yakin ingin menghapus event <strong className="text-foreground">"{event.title}"</strong>? Seluruh data tiket, kupon, speaker, dan agenda yang berkaitan akan dihapus secara permanen.
-                    </p>
-                    <DialogFooter className="gap-2 sm:gap-0">
-                        <Button
-                            variant="outline"
-                            className="border-2 border-foreground font-bold"
-                            onClick={() => setDeleteDialogOpen(false)}
-                            disabled={deleting}
-                        >
-                            Batal
-                        </Button>
-                        <Button
-                            variant="destructive"
-                            className="border-2 border-destructive font-bold"
-                            onClick={handleConfirmDelete}
-                            disabled={deleting}
-                        >
-                            {deleting ? 'Menghapus...' : 'Ya, Hapus Event'}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                {/* Tiket & Kupon */}
+                <td className="px-4 py-3.5 align-middle text-xs">
+                    <div className="flex flex-col gap-1 font-semibold text-muted-foreground">
+                        <span className="flex items-center gap-1.5">
+                            <Ticket className="size-3.5 text-foreground/70" />
+                            {event.tickets_count} tipe tiket
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                            <Tag className="size-3.5 text-foreground/70" />
+                            {event.coupons_count} kupon
+                        </span>
+                    </div>
+                </td>
+
+                {/* Actions (Dropdown Menu) */}
+                <td className="px-4 py-3.5 align-middle text-right">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="size-8 shrink-0 hover:border-2 hover:border-foreground">
+                                <MoreVertical className="size-4" />
+                                <span className="sr-only">Menu aksi</span>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="border-2 border-foreground">
+                            <DropdownMenuItem asChild>
+                                <Link href={eventsShow({ event: event.id }).url} className="flex items-center gap-2 font-semibold">
+                                    <Eye className="size-4" /> Detail
+                                </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                                <Link href={eventsEdit({ event: event.id }).url} className="flex items-center gap-2 font-semibold">
+                                    <Pencil className="size-4" /> Edit
+                                </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                                className="flex cursor-pointer items-center gap-2 font-semibold text-destructive focus:text-destructive"
+                                onSelect={(e) => {
+                                    e.preventDefault();
+                                    setDeleteDialogOpen(true);
+                                }}
+                                disabled={deleting}
+                            >
+                                <Trash2 className="size-4" /> Hapus
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    {/* Dialog Konfirmasi Hapus */}
+                    <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                        <DialogContent className="border-2 border-foreground text-left sm:max-w-md">
+                            <DialogHeader>
+                                <div className="flex items-center gap-3">
+                                    <div className="flex size-10 shrink-0 items-center justify-center rounded-full border border-destructive/20 bg-destructive/10 text-destructive">
+                                        <AlertTriangle className="size-5" />
+                                    </div>
+                                    <div>
+                                        <DialogTitle className="text-base font-bold">Hapus Event</DialogTitle>
+                                        <DialogDescription className="mt-0.5 text-xs text-muted-foreground">
+                                            Tindakan ini tidak dapat dibatalkan.
+                                        </DialogDescription>
+                                    </div>
+                                </div>
+                            </DialogHeader>
+                            <p className="text-sm text-foreground/80">
+                                Apakah Anda yakin ingin menghapus event <strong className="text-foreground">"{event.title}"</strong>? Seluruh data tiket, kupon, speaker, dan agenda yang berkaitan akan dihapus secara permanen.
+                            </p>
+                            <DialogFooter className="gap-2 sm:gap-0">
+                                <Button
+                                    variant="outline"
+                                    className="border-2 border-foreground font-bold"
+                                    onClick={() => setDeleteDialogOpen(false)}
+                                    disabled={deleting}
+                                >
+                                    Batal
+                                </Button>
+                                <Button
+                                    variant="destructive"
+                                    className="border-2 border-destructive font-bold"
+                                    onClick={handleConfirmDelete}
+                                    disabled={deleting}
+                                >
+                                    {deleting ? 'Menghapus...' : 'Ya, Hapus Event'}
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                </td>
+            </tr>
         </>
     );
 }
@@ -415,15 +394,31 @@ export default function EventsIndex({ events, filters }: Props) {
                     ))}
                 </div>
 
-                {/* Grid */}
+                {/* Table */}
                 {events.data.length === 0 ? (
                     <EmptyState />
                 ) : (
                     <>
-                        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                            {events.data.map((event) => (
-                                <EventCard key={event.id} event={event} />
-                            ))}
+                        <div className="overflow-hidden rounded-lg border-2 border-foreground bg-background shadow-xs">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left text-sm">
+                                    <thead className="border-b-2 border-foreground bg-muted/60 text-xs font-black uppercase tracking-wider text-muted-foreground">
+                                        <tr>
+                                            <th scope="col" className="px-4 py-3.5">Event</th>
+                                            <th scope="col" className="px-4 py-3.5">Tipe & Lokasi</th>
+                                            <th scope="col" className="px-4 py-3.5">Jadwal</th>
+                                            <th scope="col" className="px-4 py-3.5">Status</th>
+                                            <th scope="col" className="px-4 py-3.5">Tiket / Kupon</th>
+                                            <th scope="col" className="px-4 py-3.5 text-right">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y-2 divide-foreground/10 font-medium">
+                                        {events.data.map((event) => (
+                                            <EventTableRow key={event.id} event={event} />
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
 
                         {/* Pagination */}
