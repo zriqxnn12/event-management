@@ -37,97 +37,16 @@ import {
     Unlock,
     ExternalLink,
 } from 'lucide-react';
-
-// ─── Types ───────────────────────────────────────────────────────────────────
-
-export type TicketRow = {
-    _key: string;
-    name: string;
-    description: string;
-    type: 'free' | 'paid';
-    price: string;
-    quota: string;
-    sale_start: string;
-    sale_end: string;
-    perks: string[];
-    is_active: boolean;
-};
-
-export type CouponRow = {
-    _key: string;
-    code: string;
-    description: string;
-    discount_type: 'percentage' | 'fixed';
-    discount_value: string;
-    max_discount_amount: string;
-    max_uses: string;
-    max_uses_per_user: string;
-    minimum_purchase: string;
-    valid_from: string;
-    valid_until: string;
-    is_active: boolean;
-};
-
-export type AgendaRow = {
-    _key: string;
-    title: string;
-    description: string;
-    start_time: string;
-    end_time: string;
-    speaker_name: string;
-    date: string;
-};
-
-export type SpeakerRow = {
-    _key: string;
-    name: string;
-    title: string;
-    company: string;
-    bio: string;
-    linkedin_url: string;
-    twitter_url: string;
-};
-
-export type SponsorRow = {
-    _key: string;
-    name: string;
-    website_url: string;
-    tier: 'platinum' | 'gold' | 'silver' | 'bronze' | 'partner';
-};
-
-export type EventFormData = {
-    title: string;
-    description: string;
-    category: string;
-    type: 'online' | 'offline' | 'hybrid';
-    status: 'draft' | 'published' | 'cancelled' | 'completed';
-    start_date: string;
-    end_date: string;
-    registration_start: string;
-    registration_end: string;
-    max_attendees: string;
-    location_name: string;
-    location_address: string;
-    location_maps_url: string;
-    online_platform: string;
-    online_url: string;
-    online_url_protected: boolean;
-    online_url_password: string;
-    cover_image: File | null;
-    tags: string[];
-    tickets: TicketRow[];
-    coupons: CouponRow[];
-    agendas: AgendaRow[];
-    speakers: SpeakerRow[];
-    sponsors: SponsorRow[];
-};
-
-type Props = {
-    initialData?: Partial<EventFormData>;
-    action: string;
-    method: 'post' | 'put' | 'patch';
-    submitLabel?: string;
-};
+import type {
+    TicketRow,
+    CouponRow,
+    AgendaRow,
+    SpeakerRow,
+    SponsorRow,
+    EventFormData,
+    EventFormProps as Props,
+} from '@/types';
+export type { TicketRow, CouponRow, AgendaRow, SpeakerRow, SponsorRow, EventFormData, Props as EventFormProps };
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 

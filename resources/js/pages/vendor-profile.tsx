@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { home } from '@/routes';
 import { Button } from '@/components/ui/button';
@@ -23,31 +24,22 @@ import {
     Music,
     Palette,
     GraduationCap,
+    Laptop,
+    Briefcase,
+    Trophy,
+    Utensils,
+    FolderOpen,
+    Plus,
 } from 'lucide-react';
 import { SocialIcon, getPlatformMeta } from '@/components/social-media-icon';
 import { toast } from 'sonner';
-
-type SocialMediaItem = {
-    id?: string;
-    platform: string;
-    url: string;
-    handle?: string | null;
-};
-
-type Vendor = {
-    id: number;
-    name: string;
-    username: string;
-    avatar?: string | null;
-    about?: string | null;
-    role: string;
-    memberSince: string;
-    socialMedia?: SocialMediaItem[];
-};
-
-type Props = {
-    vendor: Vendor;
-};
+import type {
+    SocialMediaItem,
+    Vendor,
+    VendorProfileEvent,
+    VendorProfileStats,
+    VendorProfileProps as Props,
+} from '@/types/event';
 
 function resolveSocialMediaUrl(platform: string, rawUrl: string): string {
     const raw = (rawUrl || '').trim();
@@ -86,129 +78,173 @@ function resolveSocialMediaUrl(platform: string, rawUrl: string): string {
     return `https://${raw}`;
 }
 
-/** Static placeholder event data for the vendor profile. */
-const PLACEHOLDER_EVENTS = [
-    {
-        id: 1,
-        title: 'Neon Nights Music Festival',
-        date: '15 Nov 2026',
-        location: 'Jakarta Convention Center',
-        category: 'Musik',
-        categoryIcon: Music,
-        attendees: 2400,
-        price: 'Rp 150.000',
-        status: 'upcoming' as const,
-    },
-    {
-        id: 2,
-        title: 'Creative Design Workshop',
-        date: '22 Nov 2026',
-        location: 'CoHive Mega Kuningan',
-        category: 'Workshop',
-        categoryIcon: Palette,
-        attendees: 120,
-        price: 'Rp 75.000',
-        status: 'upcoming' as const,
-    },
-    {
-        id: 3,
-        title: 'Tech Startup Bootcamp 2026',
-        date: '28 Okt 2026',
-        location: 'Universitas Indonesia, Depok',
-        category: 'Edukasi',
-        categoryIcon: GraduationCap,
-        attendees: 350,
-        price: 'Gratis',
-        status: 'past' as const,
-    },
-];
-
-const STATS = [
-    { label: 'Total Event', value: '24', icon: CalendarDays },
-    { label: 'Total Peserta', value: '8.500+', icon: Users },
-    { label: 'Rating', value: '4.9', icon: Star },
-    { label: 'Tiket Terjual', value: '12.000+', icon: Ticket },
-];
+function getCategoryIcon(category?: string | null) {
+    const cat = (category || '').toLowerCase();
+    if (cat.includes('musik') || cat.includes('music') || cat.includes('konser')) return Music;
+    if (cat.includes('design') || cat.includes('seni') || cat.includes('art') || cat.includes('workshop')) return Palette;
+    if (cat.includes('edukasi') || cat.includes('pendidikan') || cat.includes('kursus') || cat.includes('seminar')) return GraduationCap;
+    if (cat.includes('tech') || cat.includes('coding') || cat.includes('teknologi') || cat.includes('programming')) return Laptop;
+    if (cat.includes('bisnis') || cat.includes('karir') || cat.includes('business')) return Briefcase;
+    if (cat.includes('olahraga') || cat.includes('sport') || cat.includes('game')) return Trophy;
+    if (cat.includes('kuliner') || cat.includes('food')) return Utensils;
+    return CalendarDays;
+}
 
 function EventCard({
     event,
+    isOwner = false,
 }: {
-    event: (typeof PLACEHOLDER_EVENTS)[number];
+    event: VendorProfileEvent;
+    isOwner?: boolean;
 }) {
-    const IconComponent = event.categoryIcon;
-    const isUpcoming = event.status === 'upcoming';
+    const IconComponent = getCategoryIcon(event.category);
+    const isUpcoming = event.isUpcoming;
 
     return (
-        <Card className="group border-2 border-foreground transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
-            {/* Event visual banner */}
-            <div
-                className={`relative h-36 border-b-2 border-foreground ${
-                    isUpcoming ? 'bg-secondary/40' : 'bg-muted/60'
-                }`}
-            >
-                <div className="absolute inset-0 flex items-center justify-center">
-                    <IconComponent className="size-16 text-foreground/10" />
+        <Card className="group flex flex-col justify-between overflow-hidden border-2 border-foreground transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
+            <div>
+                {/* Event visual banner */}
+                <div
+                    className={`relative h-44 overflow-hidden border-b-2 border-foreground ${
+                        isUpcoming ? 'bg-secondary/40' : 'bg-muted/60'
+                    }`}
+                >
+                    {event.cover_image ? (
+                        <img
+                            src={`/storage/${event.cover_image}`}
+                            alt={event.title}
+                            className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                    ) : (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <IconComponent className="size-16 text-foreground/15" />
+                        </div>
+                    )}
+
+                    {/* Gradient Overlay for Text Readability */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+
+                    <div className="absolute top-3 left-3 flex items-center gap-1.5">
+                        <Badge
+                            variant={event.status === 'draft' ? 'outline' : isUpcoming ? 'default' : 'secondary'}
+                            className="border-2 border-foreground text-xs font-black shadow-2xs"
+                        >
+                            {event.status === 'draft' ? 'Draft' : isUpcoming ? 'Upcoming' : 'Selesai'}
+                        </Badge>
+                        <Badge
+                            variant="secondary"
+                            className="border-2 border-foreground text-[10px] font-black uppercase shadow-2xs"
+                        >
+                            {event.type === 'online' ? 'Online' : 'Offline'}
+                        </Badge>
+                    </div>
+
+                    <div className="absolute top-3 right-3">
+                        <Badge
+                            variant="outline"
+                            className="border-2 border-foreground bg-background/95 text-xs font-bold backdrop-blur-xs shadow-2xs"
+                        >
+                            {event.category || (event.type === 'online' ? 'Webinar' : 'Acara')}
+                        </Badge>
+                    </div>
                 </div>
-                <div className="absolute top-3 left-3">
-                    <Badge
-                        variant={isUpcoming ? 'default' : 'secondary'}
-                        className="border-2 border-foreground text-xs font-bold shadow-2xs"
-                    >
-                        {isUpcoming ? 'Upcoming' : 'Selesai'}
-                    </Badge>
-                </div>
-                <div className="absolute top-3 right-3">
-                    <Badge variant="outline" className="border-2 border-foreground bg-background text-xs font-bold shadow-2xs">
-                        {event.category}
-                    </Badge>
-                </div>
+
+                <CardHeader className="pb-2">
+                    <CardTitle className="line-clamp-2 text-base font-black leading-snug">
+                        {event.title}
+                    </CardTitle>
+                </CardHeader>
+
+                <CardContent className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-1.5 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                            <CalendarDays className="size-3.5 shrink-0 text-primary" />
+                            <span className="font-semibold">{event.date || 'Jadwal segera hadir'}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <MapPin className="size-3.5 shrink-0 text-primary" />
+                            <span className="truncate">{event.location || (event.type === 'online' ? 'Online' : 'Lokasi segera diumumkan')}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Users className="size-3.5 shrink-0 text-primary" />
+                            <span>
+                                {event.attendees > 0
+                                    ? `${event.attendees.toLocaleString('id-ID')} kuota peserta`
+                                    : 'Peserta umum'}
+                            </span>
+                        </div>
+                    </div>
+                </CardContent>
             </div>
 
-            <CardHeader className="pb-2">
-                <CardTitle className="line-clamp-2 text-base font-black leading-snug">{event.title}</CardTitle>
-            </CardHeader>
-
-            <CardContent className="flex flex-col gap-3">
-                <div className="flex flex-col gap-1.5 text-xs text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                        <CalendarDays className="size-3.5 shrink-0" />
-                        <span className="font-semibold">{event.date}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <MapPin className="size-3.5 shrink-0" />
-                        <span className="truncate">{event.location}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Users className="size-3.5 shrink-0" />
-                        <span>{event.attendees.toLocaleString()} peserta</span>
-                    </div>
-                </div>
-
-                <Separator className="bg-foreground/15" />
-
-                <div className="flex items-center justify-between">
-                    <span className="font-mono text-sm font-black">{event.price}</span>
-                    <Button
-                        size="sm"
-                        variant={isUpcoming ? 'default' : 'outline'}
-                        className="border-2 border-foreground text-xs font-bold shadow-2xs"
-                    >
-                        {isUpcoming ? 'Lihat Detail' : 'Recap'}
-                    </Button>
+            <CardContent className="pt-0">
+                <Separator className="mb-3 bg-foreground/15" />
+                <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono text-sm font-black text-foreground">
+                        {event.price}
+                    </span>
+                    {isOwner ? (
+                        <Button
+                            size="sm"
+                            asChild
+                            variant="default"
+                            className="border-2 border-foreground text-xs font-bold shadow-2xs"
+                        >
+                            <Link href={`/vendor/events/${event.id}`}>
+                                Kelola Event
+                            </Link>
+                        </Button>
+                    ) : (
+                        <Button
+                            size="sm"
+                            variant={isUpcoming ? 'default' : 'outline'}
+                            className="border-2 border-foreground text-xs font-bold shadow-2xs"
+                            onClick={() => {
+                                toast.info(`Event: ${event.title}`, {
+                                    description: `Status: ${isUpcoming ? 'Akan Datang' : 'Selesai'} • Tiket: ${event.price}`,
+                                });
+                            }}
+                        >
+                            {isUpcoming ? 'Lihat Detail' : 'Selesai'}
+                        </Button>
+                    )}
                 </div>
             </CardContent>
         </Card>
     );
 }
 
-export default function VendorProfile({ vendor }: Props) {
+export default function VendorProfile({ vendor, events = [], stats }: Props) {
     const { auth } = usePage().props;
+    const isOwner = Boolean(auth.user && (auth.user as any).id === vendor.id);
+    const [filter, setFilter] = useState<'all' | 'upcoming' | 'past'>('all');
+
     const initials = vendor.name
         .split(' ')
         .map((word: string) => word[0])
         .slice(0, 2)
         .join('')
         .toUpperCase();
+
+    const totalEvents = stats?.totalEvents ?? events.length;
+    const totalAttendees = stats?.totalAttendees ?? events.reduce((sum, e) => sum + (e.attendees || 0), 0);
+    const categoryCount = new Set(events.map((e) => e.category).filter(Boolean)).size;
+
+    const dynamicStats = [
+        { label: 'Total Event', value: totalEvents.toString(), icon: CalendarDays },
+        { label: 'Total Peserta', value: totalAttendees > 0 ? totalAttendees.toLocaleString('id-ID') : '0', icon: Users },
+        { label: 'Rating', value: '5.0', icon: Star },
+        { label: 'Kategori', value: categoryCount > 0 ? categoryCount.toString() : '1', icon: Ticket },
+    ];
+
+    const upcomingCount = events.filter((e) => e.isUpcoming).length;
+    const pastCount = events.filter((e) => !e.isUpcoming && e.status !== 'draft').length;
+
+    const filteredEvents = events.filter((event) => {
+        if (filter === 'upcoming') return event.isUpcoming;
+        if (filter === 'past') return !event.isUpcoming;
+        return true;
+    });
 
     return (
         <>
@@ -379,11 +415,11 @@ export default function VendorProfile({ vendor }: Props) {
                 {/* ───── STATS BAR ───── */}
                 <section className="border-b-2 border-foreground bg-secondary/20">
                     <div className="mx-auto grid max-w-5xl grid-cols-2 sm:grid-cols-4">
-                        {STATS.map((stat, index) => (
+                        {dynamicStats.map((stat, index) => (
                             <div
                                 key={stat.label}
                                 className={`flex flex-col items-center gap-1 px-4 py-5 ${
-                                    index < STATS.length - 1 ? 'border-r-2 border-foreground/15 sm:border-foreground/15' : ''
+                                    index < dynamicStats.length - 1 ? 'border-r-2 border-foreground/15 sm:border-foreground/15' : ''
                                 } ${index === 1 ? 'border-r-0 sm:border-r-2' : ''}`}
                             >
                                 <stat.icon className="mb-1 size-5 text-primary" />
@@ -405,34 +441,86 @@ export default function VendorProfile({ vendor }: Props) {
                                 </p>
                             </div>
                             <div className="flex gap-2">
-                                <Badge variant="default" className="cursor-pointer border-2 border-foreground px-3 py-1 text-xs font-bold shadow-2xs">
-                                    Semua
+                                <Badge
+                                    variant={filter === 'all' ? 'default' : 'outline'}
+                                    className="cursor-pointer border-2 border-foreground px-3 py-1 text-xs font-bold shadow-2xs hover:bg-secondary/40"
+                                    onClick={() => setFilter('all')}
+                                >
+                                    Semua ({events.length})
                                 </Badge>
-                                <Badge variant="outline" className="cursor-pointer border-2 border-foreground px-3 py-1 text-xs font-bold shadow-2xs hover:bg-secondary/40">
-                                    Upcoming
+                                <Badge
+                                    variant={filter === 'upcoming' ? 'default' : 'outline'}
+                                    className="cursor-pointer border-2 border-foreground px-3 py-1 text-xs font-bold shadow-2xs hover:bg-secondary/40"
+                                    onClick={() => setFilter('upcoming')}
+                                >
+                                    Upcoming ({upcomingCount})
                                 </Badge>
-                                <Badge variant="outline" className="cursor-pointer border-2 border-foreground px-3 py-1 text-xs font-bold shadow-2xs hover:bg-secondary/40">
-                                    Selesai
+                                <Badge
+                                    variant={filter === 'past' ? 'default' : 'outline'}
+                                    className="cursor-pointer border-2 border-foreground px-3 py-1 text-xs font-bold shadow-2xs hover:bg-secondary/40"
+                                    onClick={() => setFilter('past')}
+                                >
+                                    Selesai ({pastCount})
                                 </Badge>
                             </div>
                         </div>
 
-                        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                            {PLACEHOLDER_EVENTS.map((event) => (
-                                <EventCard key={event.id} event={event} />
-                            ))}
-                        </div>
+                        {filteredEvents.length > 0 ? (
+                            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                                {filteredEvents.map((event) => (
+                                    <EventCard key={event.id} event={event} isOwner={isOwner} />
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center border-2 border-dashed border-foreground/30 bg-muted/20 p-12 text-center">
+                                <div className="mb-4 flex size-14 items-center justify-center border-2 border-foreground bg-secondary/50 shadow-xs">
+                                    <FolderOpen className="size-7 text-foreground" />
+                                </div>
+                                <h3 className="text-lg font-black tracking-tight">Belum Ada Event</h3>
+                                <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+                                    {filter === 'upcoming'
+                                        ? 'Saat ini belum ada event mendatang yang terdaftar.'
+                                        : filter === 'past'
+                                          ? 'Belum ada riwayat event yang telah selesai.'
+                                          : `${vendor.name} belum memiliki event yang dipublikasikan.`}
+                                </p>
+                                {isOwner && (
+                                    <Button asChild className="mt-5 border-2 border-foreground font-bold shadow-xs">
+                                        <Link href="/vendor/events/create">
+                                            <Plus data-icon="inline-start" />
+                                            Buat Event Sekarang
+                                        </Link>
+                                    </Button>
+                                )}
+                            </div>
+                        )}
 
-                        {/* Load more */}
-                        <div className="mt-10 flex justify-center">
-                            <Button
-                                variant="outline"
-                                className="border-2 border-foreground px-8 font-bold shadow-xs hover:bg-secondary/40"
-                            >
-                                Lihat Semua Event
-                                <ExternalLink data-icon="inline-end" />
-                            </Button>
-                        </div>
+                        {/* Extra Action Link */}
+                        {isOwner ? (
+                            <div className="mt-10 flex justify-center">
+                                <Button
+                                    asChild
+                                    variant="outline"
+                                    className="border-2 border-foreground px-8 font-bold shadow-xs hover:bg-secondary/40"
+                                >
+                                    <Link href="/vendor/events">
+                                        Kelola Semua Event di Dashboard
+                                        <ExternalLink data-icon="inline-end" />
+                                    </Link>
+                                </Button>
+                            </div>
+                        ) : events.length > 6 ? (
+                            <div className="mt-10 flex justify-center">
+                                <Button
+                                    variant="outline"
+                                    className="border-2 border-foreground px-8 font-bold shadow-xs hover:bg-secondary/40"
+                                    onClick={() => setFilter('all')}
+                                >
+                                    Lihat Semua Event ({events.length})
+                                    <ExternalLink data-icon="inline-end" />
+                                </Button>
+                            </div>
+                        ) : null}
                     </div>
                 </section>
 
