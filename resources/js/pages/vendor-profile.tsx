@@ -126,10 +126,10 @@ function EventCard({
 
                     <div className="absolute top-3 left-3 flex items-center gap-1.5">
                         <Badge
-                            variant={event.status === 'draft' ? 'outline' : isUpcoming ? 'default' : 'secondary'}
+                            variant={isUpcoming ? 'default' : 'secondary'}
                             className="border-2 border-foreground text-xs font-black shadow-2xs"
                         >
-                            {event.status === 'draft' ? 'Draft' : isUpcoming ? 'Upcoming' : 'Selesai'}
+                            {isUpcoming ? 'Upcoming' : 'Selesai'}
                         </Badge>
                         <Badge
                             variant="secondary"
@@ -226,9 +226,12 @@ export default function VendorProfile({ vendor, events = [], stats }: Props) {
         .join('')
         .toUpperCase();
 
-    const totalEvents = stats?.totalEvents ?? events.length;
-    const totalAttendees = stats?.totalAttendees ?? events.reduce((sum, e) => sum + (e.attendees || 0), 0);
-    const categoryCount = new Set(events.map((e) => e.category).filter(Boolean)).size;
+    // Jangan tampilkan event berstatus draft di vendor profile publik
+    const publicEvents = events.filter((e) => e.status !== 'draft');
+
+    const totalEvents = stats?.totalEvents ?? publicEvents.length;
+    const totalAttendees = stats?.totalAttendees ?? publicEvents.reduce((sum, e) => sum + (e.attendees || 0), 0);
+    const categoryCount = new Set(publicEvents.map((e) => e.category).filter(Boolean)).size;
 
     const dynamicStats = [
         { label: 'Total Event', value: totalEvents.toString(), icon: CalendarDays },
@@ -237,10 +240,10 @@ export default function VendorProfile({ vendor, events = [], stats }: Props) {
         { label: 'Kategori', value: categoryCount > 0 ? categoryCount.toString() : '1', icon: Ticket },
     ];
 
-    const upcomingCount = events.filter((e) => e.isUpcoming).length;
-    const pastCount = events.filter((e) => !e.isUpcoming && e.status !== 'draft').length;
+    const upcomingCount = publicEvents.filter((e) => e.isUpcoming).length;
+    const pastCount = publicEvents.filter((e) => !e.isUpcoming).length;
 
-    const filteredEvents = events.filter((event) => {
+    const filteredEvents = publicEvents.filter((event) => {
         if (filter === 'upcoming') return event.isUpcoming;
         if (filter === 'past') return !event.isUpcoming;
         return true;
@@ -445,23 +448,23 @@ export default function VendorProfile({ vendor, events = [], stats }: Props) {
                                     variant={filter === 'all' ? 'default' : 'outline'}
                                     className="cursor-pointer border-2 border-foreground px-3 py-1 text-xs font-bold shadow-2xs hover:bg-secondary/40"
                                     onClick={() => setFilter('all')}
-                                >
-                                    Semua ({events.length})
-                                </Badge>
-                                <Badge
-                                    variant={filter === 'upcoming' ? 'default' : 'outline'}
-                                    className="cursor-pointer border-2 border-foreground px-3 py-1 text-xs font-bold shadow-2xs hover:bg-secondary/40"
-                                    onClick={() => setFilter('upcoming')}
-                                >
-                                    Upcoming ({upcomingCount})
-                                </Badge>
-                                <Badge
-                                    variant={filter === 'past' ? 'default' : 'outline'}
-                                    className="cursor-pointer border-2 border-foreground px-3 py-1 text-xs font-bold shadow-2xs hover:bg-secondary/40"
-                                    onClick={() => setFilter('past')}
-                                >
-                                    Selesai ({pastCount})
-                                </Badge>
+                                 >
+                                     Semua ({publicEvents.length})
+                                 </Badge>
+                                 <Badge
+                                     variant={filter === 'upcoming' ? 'default' : 'outline'}
+                                     className="cursor-pointer border-2 border-foreground px-3 py-1 text-xs font-bold shadow-2xs hover:bg-secondary/40"
+                                     onClick={() => setFilter('upcoming')}
+                                 >
+                                     Upcoming ({upcomingCount})
+                                 </Badge>
+                                 <Badge
+                                     variant={filter === 'past' ? 'default' : 'outline'}
+                                     className="cursor-pointer border-2 border-foreground px-3 py-1 text-xs font-bold shadow-2xs hover:bg-secondary/40"
+                                     onClick={() => setFilter('past')}
+                                 >
+                                     Selesai ({pastCount})
+                                 </Badge>
                             </div>
                         </div>
 
@@ -509,14 +512,14 @@ export default function VendorProfile({ vendor, events = [], stats }: Props) {
                                     </Link>
                                 </Button>
                             </div>
-                        ) : events.length > 6 ? (
+                        ) : publicEvents.length > 6 ? (
                             <div className="mt-10 flex justify-center">
                                 <Button
                                     variant="outline"
                                     className="border-2 border-foreground px-8 font-bold shadow-xs hover:bg-secondary/40"
                                     onClick={() => setFilter('all')}
                                 >
-                                    Lihat Semua Event ({events.length})
+                                    Lihat Semua Event ({publicEvents.length})
                                     <ExternalLink data-icon="inline-end" />
                                 </Button>
                             </div>

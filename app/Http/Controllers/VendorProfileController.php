@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Event;
 use App\Models\User;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -16,9 +15,7 @@ class VendorProfileController extends Controller
      */
     public function show(User $user): Response
     {
-        $statusFilter = (Auth::id() === $user->id)
-            ? ['published', 'completed', 'draft']
-            : ['published', 'completed'];
+        $statusFilter = ['published', 'completed'];
 
         $events = $user->events()
             ->with(['tickets'])
