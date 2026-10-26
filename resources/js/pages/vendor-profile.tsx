@@ -92,20 +92,22 @@ function getCategoryIcon(category?: string | null) {
 
 function EventCard({
     event,
-    isOwner = false,
+    vendorUsername,
 }: {
     event: VendorProfileEvent;
-    isOwner?: boolean;
+    vendorUsername: string;
 }) {
     const IconComponent = getCategoryIcon(event.category);
     const isUpcoming = event.isUpcoming;
+    const eventUrl = `/${vendorUsername}/${event.slug}`;
 
     return (
         <Card className="group flex flex-col justify-between overflow-hidden border-2 border-foreground transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
             <div>
                 {/* Event visual banner */}
-                <div
-                    className={`relative h-44 overflow-hidden border-b-2 border-foreground ${
+                <Link
+                    href={eventUrl}
+                    className={`relative block h-44 overflow-hidden border-b-2 border-foreground ${
                         isUpcoming ? 'bg-secondary/40' : 'bg-muted/60'
                     }`}
                 >
@@ -147,11 +149,13 @@ function EventCard({
                             {event.category || (event.type === 'online' ? 'Webinar' : 'Acara')}
                         </Badge>
                     </div>
-                </div>
+                </Link>
 
                 <CardHeader className="pb-2 mt-4">
                     <CardTitle className="line-clamp-2 text-base font-black leading-snug">
-                        {event.title}
+                        <Link href={eventUrl} className="hover:text-primary transition-colors">
+                            {event.title}
+                        </Link>
                     </CardTitle>
                 </CardHeader>
 
@@ -183,31 +187,16 @@ function EventCard({
                     <span className="font-mono text-sm font-black text-foreground">
                         {event.price}
                     </span>
-                    {isOwner ? (
-                        <Button
-                            size="sm"
-                            asChild
-                            variant="default"
-                            className="border-2 border-foreground text-xs font-bold shadow-2xs"
-                        >
-                            <Link href={`/vendor/events/${event.id}`}>
-                                Kelola Event
-                            </Link>
-                        </Button>
-                    ) : (
-                        <Button
-                            size="sm"
-                            variant={isUpcoming ? 'default' : 'outline'}
-                            className="border-2 border-foreground text-xs font-bold shadow-2xs"
-                            onClick={() => {
-                                toast.info(`Event: ${event.title}`, {
-                                    description: `Status: ${isUpcoming ? 'Akan Datang' : 'Selesai'} • Tiket: ${event.price}`,
-                                });
-                            }}
-                        >
-                            {isUpcoming ? 'Lihat Detail' : 'Selesai'}
-                        </Button>
-                    )}
+                    <Button
+                        asChild
+                        size="sm"
+                        variant="default"
+                        className="border-2 border-foreground text-xs font-bold shadow-2xs hover:shadow-xs transition-shadow"
+                    >
+                        <Link href={eventUrl}>
+                            Daftar Sekarang
+                        </Link>
+                    </Button>
                 </div>
             </CardContent>
         </Card>
@@ -270,12 +259,6 @@ export default function VendorProfile({ vendor, events = [], stats }: Props) {
                         </Link>
 
                         <div className="flex items-center gap-2">
-                            {/* <Button variant="outline" size="sm" asChild className="border-2 border-foreground text-xs font-bold shadow-xs">
-                                <Link href={home()}>
-                                    <ArrowLeft data-icon="inline-start" />
-                                    Beranda
-                                </Link>
-                            </Button> */}
                             {auth.user && (
                                 <Button size="sm" asChild className="border-2 border-foreground text-xs font-bold shadow-xs">
                                     <Link href="/dashboard">Dashboard</Link>
@@ -471,7 +454,11 @@ export default function VendorProfile({ vendor, events = [], stats }: Props) {
                         {filteredEvents.length > 0 ? (
                             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                                 {filteredEvents.map((event) => (
-                                    <EventCard key={event.id} event={event} isOwner={isOwner} />
+                                    <EventCard
+                                        key={event.id}
+                                        event={event}
+                                        vendorUsername={vendor.username}
+                                    />
                                 ))}
                             </div>
                         ) : (

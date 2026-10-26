@@ -146,6 +146,7 @@ export type Vendor = {
     role: string;
     memberSince: string;
     socialMedia?: SocialMediaItem[];
+    totalEvents?: number;
 };
 
 export type VendorProfileEvent = {
@@ -175,5 +176,93 @@ export type VendorProfileProps = {
     vendor: Vendor;
     events?: VendorProfileEvent[];
     stats?: VendorProfileStats;
+};
+
+// ─── Public Event Detail ─────────────────────────────────────────────────────────
+
+export type PublicTicket = {
+    id: number;
+    name: string;
+    description: string | null;
+    type: 'free' | 'paid';
+    price: number;
+    formatted_price: string;
+    quota: number | null;
+    sold: number;
+    remaining_quota: number | null;
+    perks: string[];
+    is_active: boolean;
+    is_on_sale: boolean;
+    is_sold_out: boolean;
+    sale_start: string | null;
+    sale_end: string | null;
+};
+
+export type PublicAgenda = {
+    id: number;
+    title: string;
+    description: string | null;
+    start_time: string;
+    end_time: string | null;
+    speaker_name: string | null;
+    date: string | null;
+};
+
+export type PublicSpeaker = {
+    id: number;
+    name: string;
+    title: string | null;
+    company: string | null;
+    bio: string | null;
+    avatar: string | null;
+    linkedin_url: string | null;
+    twitter_url: string | null;
+};
+
+export type PublicSponsor = {
+    id: number;
+    name: string;
+    tier: 'platinum' | 'gold' | 'silver' | 'bronze' | 'partner';
+    website_url: string | null;
+    logo: string | null;
+};
+
+export type PublicEventDetail = {
+    id: number;
+    title: string;
+    slug: string;
+    description: string | null;
+    category: string;
+    type: EventType;
+    status: EventStatus;
+    isUpcoming: boolean;
+    isRegistrationOpen: boolean;
+    date: string;
+    time: string;
+    start_date: string | null;
+    end_date: string | null;
+    registration_start: string | null;
+    registration_end: string | null;
+    location_name: string | null;
+    location_address: string | null;
+    location_maps_url: string | null;
+    online_platform: string | null;
+    online_url: string | null;
+    online_url_protected: boolean;
+    max_attendees: number | null;
+    cover_image: string | null;
+    tags: string[];
+    price_display: string;
+    tickets: PublicTicket[];
+    agendas: PublicAgenda[];
+    speakers: PublicSpeaker[];
+    sponsors: PublicSponsor[];
+};
+
+export type EventDetailPageProps = {
+    event: PublicEventDetail;
+    vendor: Vendor;
+    otherEvents?: VendorProfileEvent[];
+    isPreview?: boolean;
 };
 

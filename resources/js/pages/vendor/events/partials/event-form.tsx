@@ -272,13 +272,13 @@ export default function EventForm({
 
     // ── Generic list helpers ──
     const updateItem = <T,>(field: keyof EventFormData, key: string, patch: Partial<T>) => {
-        setData(field, (data[field] as (T & { _key: string })[]).map((item) =>
+        setData(field, (((data[field] as unknown as (T & { _key: string })[]) || []).map((item) =>
             item._key === key ? { ...item, ...patch } : item
-        ) as EventFormData[typeof field]);
+        ) as unknown as EventFormData[typeof field]));
     };
 
     const removeItem = (field: keyof EventFormData, key: string) => {
-        setData(field, (data[field] as { _key: string }[]).filter((i) => i._key !== key) as EventFormData[typeof field]);
+        setData(field, (((data[field] as unknown as { _key: string }[]) || []).filter((i) => i._key !== key) as unknown as EventFormData[typeof field]));
     };
 
     const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -740,7 +740,7 @@ export default function EventForm({
 
                     <div className="flex flex-col gap-6">
                         {/* Offline Location Section */}
-                        {isOffline ? (
+                        {isOffline && (
                             <div className="border-2 border-foreground/30 p-5 bg-muted/10">
                                 <div className="mb-4 flex items-center gap-2">
                                     <MapPin className="size-5 text-primary" />
@@ -805,15 +805,10 @@ export default function EventForm({
                                     </div>
                                 </div>
                             </div>
-                        ) : (
-                            <div className="border-2 border-dashed border-foreground/30 p-4 text-xs text-muted-foreground bg-muted/10">
-                                ℹ️ Event ini bertipe <strong>ONLINE</strong>, sehingga kolom lokasi fisik dinonaktifkan.
-                                Jika ingin menambahkan lokasi fisik, ubah tipe event menjadi <strong>Offline</strong> atau <strong>Hybrid</strong> di Langkah 1.
-                            </div>
                         )}
 
                         {/* Online Streaming / Meeting Section */}
-                        {isOnline ? (
+                        {isOnline && (
                             <div className="border-2 border-foreground/30 p-5 bg-muted/10">
                                 <div className="mb-4 flex items-center gap-2">
                                     <Monitor className="size-5 text-primary" />
@@ -889,11 +884,6 @@ export default function EventForm({
                                         )}
                                     </div>
                                 </div>
-                            </div>
-                        ) : (
-                            <div className="border-2 border-dashed border-foreground/30 p-4 text-xs text-muted-foreground bg-muted/10">
-                                ℹ️ Event ini bertipe <strong>OFFLINE</strong>, sehingga tautan meeting online dinonaktifkan.
-                                Jika ingin menyiarkan secara online, ubah tipe event menjadi <strong>Online</strong> atau <strong>Hybrid</strong> di Langkah 1.
                             </div>
                         )}
                     </div>

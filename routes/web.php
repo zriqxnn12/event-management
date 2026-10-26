@@ -19,5 +19,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 require __DIR__.'/settings.php';
 
-// Catch-all vendor profile route — must be last to avoid clashing with fixed routes
+// Catch-all vendor & event routes — must be last to avoid clashing with fixed routes
+Route::get('/{user:username}/{event:slug}', [VendorProfileController::class, 'showEvent'])->name('vendor.event.detail');
 Route::get('/{user:username}', [VendorProfileController::class, 'show'])->name('vendor.profile');
