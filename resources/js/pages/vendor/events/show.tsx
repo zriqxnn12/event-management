@@ -64,11 +64,13 @@ type Agenda = {
 type Speaker = {
     id: number; name: string; title: string | null; company: string | null;
     bio: string | null; linkedin_url: string | null; twitter_url: string | null;
+    avatar?: string | null;
 };
 
 type Sponsor = {
     id: number; name: string; website_url: string | null;
     tier: 'platinum' | 'gold' | 'silver' | 'bronze' | 'partner';
+    logo?: string | null;
 };
 
 type EventDetail = {
@@ -284,25 +286,38 @@ export default function ShowEvent({ event }: Props) {
                                 <CardContent>
                                     <div className="grid gap-4 sm:grid-cols-2">
                                         {event.speakers.map((s) => (
-                                            <div key={s.id} className="border-2 border-foreground/20 p-3">
-                                                <p className="font-black text-sm">{s.name}</p>
-                                                {(s.title || s.company) && (
-                                                    <p className="text-xs text-muted-foreground">
-                                                        {[s.title, s.company].filter(Boolean).join(' · ')}
-                                                    </p>
+                                            <div key={s.id} className="flex gap-3 border-2 border-foreground/20 p-3 bg-muted/5">
+                                                {s.avatar ? (
+                                                    <img
+                                                        src={`/storage/${s.avatar}`}
+                                                        alt={s.name}
+                                                        className="size-12 shrink-0 border border-foreground/30 object-cover rounded-none"
+                                                    />
+                                                ) : (
+                                                    <div className="flex size-12 shrink-0 items-center justify-center border border-foreground/30 bg-primary/10 text-xs font-black">
+                                                        {s.name.charAt(0).toUpperCase()}
+                                                    </div>
                                                 )}
-                                                {s.bio && <p className="mt-1.5 text-xs text-muted-foreground line-clamp-2">{s.bio}</p>}
-                                                <div className="mt-2 flex gap-2">
-                                                    {s.linkedin_url && (
-                                                        <a href={s.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-primary hover:underline flex items-center gap-0.5">
-                                                            LinkedIn <ExternalLink className="size-2.5" />
-                                                        </a>
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="font-black text-sm">{s.name}</p>
+                                                    {(s.title || s.company) && (
+                                                        <p className="text-xs text-muted-foreground truncate">
+                                                            {[s.title, s.company].filter(Boolean).join(' · ')}
+                                                        </p>
                                                     )}
-                                                    {s.twitter_url && (
-                                                        <a href={s.twitter_url} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-primary hover:underline flex items-center gap-0.5">
-                                                            Twitter <ExternalLink className="size-2.5" />
-                                                        </a>
-                                                    )}
+                                                    {s.bio && <p className="mt-1.5 text-xs text-muted-foreground line-clamp-2">{s.bio}</p>}
+                                                    <div className="mt-2 flex gap-2">
+                                                        {s.linkedin_url && (
+                                                            <a href={s.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-primary hover:underline flex items-center gap-0.5">
+                                                                LinkedIn <ExternalLink className="size-2.5" />
+                                                            </a>
+                                                        )}
+                                                        {s.twitter_url && (
+                                                            <a href={s.twitter_url} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-primary hover:underline flex items-center gap-0.5">
+                                                                Twitter <ExternalLink className="size-2.5" />
+                                                            </a>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))}
@@ -323,6 +338,13 @@ export default function ShowEvent({ event }: Props) {
                                     <div className="flex flex-wrap gap-2">
                                         {event.sponsors.map((sp) => (
                                             <div key={sp.id} className={`flex items-center gap-2 border-2 px-3 py-2 ${TIER_CLASS[sp.tier]}`}>
+                                                {sp.logo && (
+                                                    <img
+                                                        src={`/storage/${sp.logo}`}
+                                                        alt={sp.name}
+                                                        className="size-6 object-contain border border-foreground/20 bg-background/60 p-0.5 shrink-0"
+                                                    />
+                                                )}
                                                 <Badge className={`border text-[10px] font-bold capitalize ${TIER_CLASS[sp.tier]}`}>{sp.tier}</Badge>
                                                 <span className="font-bold text-sm">{sp.name}</span>
                                                 {sp.website_url && (

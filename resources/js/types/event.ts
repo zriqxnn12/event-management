@@ -80,6 +80,7 @@ export type SpeakerRow = {
     title: string;
     company: string;
     bio: string;
+    avatar?: File | string | null;
     linkedin_url: string;
     twitter_url: string;
 };
@@ -87,6 +88,7 @@ export type SpeakerRow = {
 export type SponsorRow = {
     _key: string;
     name: string;
+    logo?: File | string | null;
     website_url: string;
     tier: 'platinum' | 'gold' | 'silver' | 'bronze' | 'partner';
 };

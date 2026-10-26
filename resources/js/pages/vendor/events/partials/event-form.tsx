@@ -136,11 +136,11 @@ const defaultAgenda = (): AgendaRow => ({
 
 const defaultSpeaker = (): SpeakerRow => ({
     _key: uid(), name: '', title: '', company: '', bio: '',
-    linkedin_url: '', twitter_url: '',
+    avatar: null, linkedin_url: '', twitter_url: '',
 });
 
 const defaultSponsor = (): SponsorRow => ({
-    _key: uid(), name: '', website_url: '', tier: 'partner',
+    _key: uid(), name: '', logo: null, website_url: '', tier: 'partner',
 });
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -1492,6 +1492,57 @@ export default function EventForm({
                                                     />
                                                 </div>
 
+                                                {/* Upload Avatar Speaker */}
+                                                <div className="sm:col-span-2 flex flex-col gap-2 border-2 border-dashed border-foreground/30 p-3 bg-background">
+                                                    <Label className="font-bold text-xs flex items-center gap-1.5">
+                                                        <ImageIcon className="size-3.5 text-primary" />
+                                                        Foto / Avatar Pembicara
+                                                    </Label>
+                                                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                                                        {/* Avatar Preview */}
+                                                        <div className="relative flex size-14 shrink-0 items-center justify-center overflow-hidden border-2 border-foreground bg-muted shadow-2xs">
+                                                            {speaker.avatar ? (
+                                                                <img
+                                                                    src={
+                                                                        speaker.avatar instanceof File
+                                                                            ? URL.createObjectURL(speaker.avatar)
+                                                                            : `/storage/${speaker.avatar}`
+                                                                    }
+                                                                    alt={speaker.name || 'Speaker'}
+                                                                    className="size-full object-cover"
+                                                                />
+                                                            ) : (
+                                                                <Users className="size-6 text-muted-foreground/40" />
+                                                            )}
+                                                        </div>
+
+                                                        <div className="flex-1 flex flex-col gap-1.5">
+                                                            <input
+                                                                type="file"
+                                                                accept="image/*"
+                                                                onChange={(e) => {
+                                                                    const file = e.target.files?.[0] ?? null;
+                                                                    updateItem<SpeakerRow>('speakers', speaker._key, { avatar: file });
+                                                                }}
+                                                                className="w-full border-2 border-foreground/40 bg-background px-2.5 py-1.5 text-xs file:mr-2 file:border-0 file:bg-transparent file:text-xs file:font-bold hover:border-foreground"
+                                                            />
+                                                            <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                                                                <span>Format: JPG, PNG, WEBP. Maksimal 2 MB.</span>
+                                                                {speaker.avatar && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => updateItem<SpeakerRow>('speakers', speaker._key, { avatar: null })}
+                                                                        className="font-bold text-destructive hover:underline"
+                                                                    >
+                                                                        Hapus Foto
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                            <InputError message={(errors as Record<string, string>)[`speakers.${idx}.avatar`]} />
+                                                        </div>
+                                                    </div>
+                                                </div>
+
                                                 <div className="sm:col-span-2 flex flex-col gap-1.5">
                                                     <Label className="font-bold text-xs">Bio Singkat</Label>
                                                     <textarea
@@ -1593,6 +1644,57 @@ export default function EventForm({
                                                         placeholder="https://sponsor.com"
                                                         className="border-2 border-foreground/40 text-sm focus:border-foreground"
                                                     />
+                                                </div>
+
+                                                {/* Upload Logo Sponsor */}
+                                                <div className="sm:col-span-3 flex flex-col gap-2 border-2 border-dashed border-foreground/30 p-3 bg-background">
+                                                    <Label className="font-bold text-xs flex items-center gap-1.5">
+                                                        <Building2 className="size-3.5 text-primary" />
+                                                        Logo Sponsor / Mitra
+                                                    </Label>
+                                                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                                                        {/* Logo Preview */}
+                                                        <div className="relative flex h-14 w-28 shrink-0 items-center justify-center overflow-hidden border-2 border-foreground bg-muted p-1 shadow-2xs">
+                                                            {sponsor.logo ? (
+                                                                <img
+                                                                    src={
+                                                                        sponsor.logo instanceof File
+                                                                            ? URL.createObjectURL(sponsor.logo)
+                                                                            : `/storage/${sponsor.logo}`
+                                                                    }
+                                                                    alt={sponsor.name || 'Sponsor Logo'}
+                                                                    className="max-h-full max-w-full object-contain"
+                                                                />
+                                                            ) : (
+                                                                <span className="text-[10px] font-mono font-bold uppercase text-muted-foreground/60">No Logo</span>
+                                                            )}
+                                                        </div>
+
+                                                        <div className="flex-1 flex flex-col gap-1.5">
+                                                            <input
+                                                                type="file"
+                                                                accept="image/*"
+                                                                onChange={(e) => {
+                                                                    const file = e.target.files?.[0] ?? null;
+                                                                    updateItem<SponsorRow>('sponsors', sponsor._key, { logo: file });
+                                                                }}
+                                                                className="w-full border-2 border-foreground/40 bg-background px-2.5 py-1.5 text-xs file:mr-2 file:border-0 file:bg-transparent file:text-xs file:font-bold hover:border-foreground"
+                                                            />
+                                                            <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                                                                <span>Format: PNG, JPG, WEBP, SVG. Maksimal 2 MB.</span>
+                                                                {sponsor.logo && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => updateItem<SponsorRow>('sponsors', sponsor._key, { logo: null })}
+                                                                        className="font-bold text-destructive hover:underline"
+                                                                    >
+                                                                        Hapus Logo
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                            <InputError message={(errors as Record<string, string>)[`sponsors.${idx}.logo`]} />
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>

@@ -87,12 +87,14 @@ class StoreEventRequest extends FormRequest
             'speakers.*.title' => ['nullable', 'string', 'max:255'],
             'speakers.*.company' => ['nullable', 'string', 'max:255'],
             'speakers.*.bio' => ['nullable', 'string'],
+            'speakers.*.avatar' => ['nullable'],
             'speakers.*.linkedin_url' => ['nullable', 'url'],
             'speakers.*.twitter_url' => ['nullable', 'url'],
 
             // Sponsors
             'sponsors' => ['nullable', 'array'],
             'sponsors.*.name' => ['required', 'string', 'max:255'],
+            'sponsors.*.logo' => ['nullable'],
             'sponsors.*.website_url' => ['nullable', 'url'],
             'sponsors.*.tier' => ['required', 'in:platinum,gold,silver,bronze,partner'],
         ];

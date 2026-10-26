@@ -48,10 +48,10 @@ type EventData = {
     }[];
     speakers: {
         id: number; name: string; title: string | null; company: string | null;
-        bio: string | null; linkedin_url: string | null; twitter_url: string | null;
+        bio: string | null; avatar: string | null; linkedin_url: string | null; twitter_url: string | null;
     }[];
     sponsors: {
-        id: number; name: string; website_url: string | null;
+        id: number; name: string; logo: string | null; website_url: string | null;
         tier: 'platinum' | 'gold' | 'silver' | 'bronze' | 'partner';
     }[];
 };
@@ -127,12 +127,14 @@ function buildInitialData(event: EventData): Partial<EventFormData> {
             title: s.title ?? '',
             company: s.company ?? '',
             bio: s.bio ?? '',
+            avatar: s.avatar ?? null,
             linkedin_url: s.linkedin_url ?? '',
             twitter_url: s.twitter_url ?? '',
         })),
         sponsors: event.sponsors.map((sp) => ({
             _key: uid(sp.id),
             name: sp.name,
+            logo: sp.logo ?? null,
             website_url: sp.website_url ?? '',
             tier: sp.tier,
         })),

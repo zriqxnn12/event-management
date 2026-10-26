@@ -70,7 +70,7 @@ class EventController extends Controller
                 ...$eventData,
             ]);
 
-            $this->syncRelated($event, $validated);
+            $this->syncRelated($event, $validated, $request);
 
             return $event;
         });
@@ -141,7 +141,7 @@ class EventController extends Controller
             $eventData['status'] = $validated['status'];
             $event->update($eventData);
 
-            $this->syncRelated($event, $validated);
+            $this->syncRelated($event, $validated, $request);
         });
 
         Inertia::flash('toast', [
@@ -166,6 +166,18 @@ class EventController extends Controller
             // Delete cover image
             if ($event->cover_image) {
                 Storage::disk('public')->delete($event->cover_image);
+            }
+
+            // Delete speaker avatars and sponsor logos
+            foreach ($event->speakers as $speaker) {
+                if ($speaker->avatar) {
+                    Storage::disk('public')->delete($speaker->avatar);
+                }
+            }
+            foreach ($event->sponsors as $sponsor) {
+                if ($sponsor->logo) {
+                    Storage::disk('public')->delete($sponsor->logo);
+                }
             }
 
             $event->delete();
@@ -200,7 +212,7 @@ class EventController extends Controller
      *
      * @param  array<string, mixed>  $validated
      */
-    private function syncRelated(Event $event, array $validated): void
+    private function syncRelated(Event $event, array $validated, Request $request): void
     {
         // Sync tickets
         if (array_key_exists('tickets', $validated)) {
@@ -242,23 +254,65 @@ class EventController extends Controller
 
         // Sync speakers
         if (array_key_exists('speakers', $validated)) {
+            $oldSpeakerAvatars = $event->speakers()->pluck('avatar')->filter()->all();
+            $newSpeakerAvatars = [];
+
             $event->speakers()->delete();
             foreach ($validated['speakers'] ?? [] as $index => $speakerData) {
-                $event->speakers()->create([
-                    ...$speakerData,
-                    'order' => $index,
-                ]);
+                $avatarPath = null;
+                if ($request->hasFile("speakers.{$index}.avatar")) {
+                    $avatarPath = $request->file("speakers.{$index}.avatar")->store('events/speakers', 'public');
+                } elseif (isset($speakerData['avatar']) && is_string($speakerData['avatar']) && ! empty($speakerData['avatar'])) {
+                    $avatarPath = $speakerData['avatar'];
+                }
+
+                if ($avatarPath) {
+                    $newSpeakerAvatars[] = $avatarPath;
+                }
+
+                $speakerAttributes = $speakerData;
+                $speakerAttributes['avatar'] = $avatarPath;
+                $speakerAttributes['order'] = $index;
+
+                $event->speakers()->create($speakerAttributes);
+            }
+
+            foreach ($oldSpeakerAvatars as $oldAvatar) {
+                if (! in_array($oldAvatar, $newSpeakerAvatars)) {
+                    Storage::disk('public')->delete($oldAvatar);
+                }
             }
         }
 
         // Sync sponsors
         if (array_key_exists('sponsors', $validated)) {
+            $oldSponsorLogos = $event->sponsors()->pluck('logo')->filter()->all();
+            $newSponsorLogos = [];
+
             $event->sponsors()->delete();
             foreach ($validated['sponsors'] ?? [] as $index => $sponsorData) {
-                $event->sponsors()->create([
-                    ...$sponsorData,
-                    'order' => $index,
-                ]);
+                $logoPath = null;
+                if ($request->hasFile("sponsors.{$index}.logo")) {
+                    $logoPath = $request->file("sponsors.{$index}.logo")->store('events/sponsors', 'public');
+                } elseif (isset($sponsorData['logo']) && is_string($sponsorData['logo']) && ! empty($sponsorData['logo'])) {
+                    $logoPath = $sponsorData['logo'];
+                }
+
+                if ($logoPath) {
+                    $newSponsorLogos[] = $logoPath;
+                }
+
+                $sponsorAttributes = $sponsorData;
+                $sponsorAttributes['logo'] = $logoPath;
+                $sponsorAttributes['order'] = $index;
+
+                $event->sponsors()->create($sponsorAttributes);
+            }
+
+            foreach ($oldSponsorLogos as $oldLogo) {
+                if (! in_array($oldLogo, $newSponsorLogos)) {
+                    Storage::disk('public')->delete($oldLogo);
+                }
             }
         }
     }
