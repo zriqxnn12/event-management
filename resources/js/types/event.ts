@@ -123,6 +123,7 @@ export type EventFormProps = {
     action: string;
     method: 'post' | 'put' | 'patch';
     submitLabel?: string;
+    existingCoverImage?: string | null;
 };
 
 // ─── Vendor Profile ───────────────────────────────────────────────────────────────

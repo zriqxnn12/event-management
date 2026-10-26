@@ -149,7 +149,7 @@ function EventCard({
                     </div>
                 </div>
 
-                <CardHeader className="pb-2">
+                <CardHeader className="pb-2 mt-4">
                     <CardTitle className="line-clamp-2 text-base font-black leading-snug">
                         {event.title}
                     </CardTitle>

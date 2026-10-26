@@ -173,6 +173,7 @@ export default function EditEvent({ event }: Props) {
                     action={eventsUpdate({ event: event.id }).url}
                     method="put"
                     submitLabel="Perbarui Event"
+                    existingCoverImage={event.cover_image}
                 />
             </div>
         </>
