@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
 /**
@@ -25,6 +26,7 @@ use Illuminate\Support\Carbon;
  * @property int $order
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
  */
 #[Fillable([
     'event_id', 'name', 'description', 'type', 'price', 'quota', 'sold',
@@ -33,7 +35,7 @@ use Illuminate\Support\Carbon;
 class EventTicket extends Model
 {
     /** @use HasFactory<EventTicketFactory> */
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     /**
      * @return array<string, string>

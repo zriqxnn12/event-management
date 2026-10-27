@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
@@ -36,6 +37,7 @@ use Illuminate\Support\Str;
  * @property array<int, string>|null $tags
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
  */
 #[Fillable([
     'user_id', 'title', 'slug', 'description', 'category', 'type', 'status',
@@ -47,7 +49,7 @@ use Illuminate\Support\Str;
 class Event extends Model
 {
     /** @use HasFactory<EventFactory> */
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     /**
      * @return array<string, string>
