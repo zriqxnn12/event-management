@@ -38,17 +38,11 @@ import {
     Layers,
     Tag,
     ChevronRight,
-    Music,
-    Palette,
-    GraduationCap,
-    Laptop,
-    Briefcase,
-    Trophy,
-    Utensils,
     Info,
     Mail,
     Phone,
 } from 'lucide-react';
+import { EventCard, getCategoryIcon } from '@/components/event-card';
 import { SocialIcon } from '@/components/social-media-icon';
 import { toast } from 'sonner';
 import type {
@@ -65,18 +59,6 @@ function capitalize(str?: string | null): string {
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-function getCategoryIcon(category?: string | null) {
-    const cat = (category || '').toLowerCase();
-    if (cat.includes('musik') || cat.includes('music') || cat.includes('konser')) return Music;
-    if (cat.includes('design') || cat.includes('seni') || cat.includes('art') || cat.includes('workshop')) return Palette;
-    if (cat.includes('edukasi') || cat.includes('pendidikan') || cat.includes('kursus') || cat.includes('seminar')) return GraduationCap;
-    if (cat.includes('tech') || cat.includes('coding') || cat.includes('teknologi') || cat.includes('programming')) return Laptop;
-    if (cat.includes('bisnis') || cat.includes('karir') || cat.includes('business')) return Briefcase;
-    if (cat.includes('olahraga') || cat.includes('sport') || cat.includes('game')) return Trophy;
-    if (cat.includes('kuliner') || cat.includes('food')) return Utensils;
-    return CalendarDays;
-}
-
 const TIER_BADGES: Record<string, { label: string; className: string }> = {
     platinum: { label: 'Platinum Sponsor', className: 'border-2 border-foreground bg-purple-100 text-purple-900 dark:bg-purple-950 dark:text-purple-200' },
     gold: { label: 'Gold Sponsor', className: 'border-2 border-foreground bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200' },
@@ -85,85 +67,6 @@ const TIER_BADGES: Record<string, { label: string; className: string }> = {
     partner: { label: 'Official Partner', className: 'border-2 border-foreground bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-200' },
 };
 
-function OtherEventCard({
-    event,
-    vendorUsername,
-}: {
-    event: VendorProfileEvent;
-    vendorUsername: string;
-}) {
-    const IconComponent = getCategoryIcon(event.category);
-    const eventUrl = `/${vendorUsername}/${event.slug}`;
-
-    return (
-        <Card className="group flex flex-col justify-between overflow-hidden border-2 border-foreground transition-all duration-200 hover:-translate-y-1 hover:shadow-lg">
-            <div>
-                <Link
-                    href={eventUrl}
-                    className="relative block h-40 overflow-hidden border-b-2 border-foreground bg-secondary/30"
-                >
-                    {event.cover_image ? (
-                        <img
-                            src={`/storage/${event.cover_image}`}
-                            alt={event.title}
-                            className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
-                        />
-                    ) : (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <IconComponent className="size-12 text-foreground/20" />
-                        </div>
-                    )}
-                    <div className="absolute top-2.5 left-2.5">
-                        <Badge
-                            variant="secondary"
-                            className="border-2 border-foreground text-[10px] font-black uppercase shadow-2xs"
-                        >
-                            {event.type === 'online' ? 'Online' : 'Offline'}
-                        </Badge>
-                    </div>
-                </Link>
-
-                <CardHeader className="pb-2 pt-3">
-                    <CardTitle className="line-clamp-2 text-sm font-black leading-snug">
-                        <Link href={eventUrl} className="hover:text-primary transition-colors">
-                            {event.title}
-                        </Link>
-                    </CardTitle>
-                </CardHeader>
-
-                <CardContent className="flex flex-col gap-2 pt-0 text-xs text-muted-foreground">
-                    <div className="flex items-center gap-1.5">
-                        <CalendarDays className="size-3.5 shrink-0 text-primary" />
-                        <span className="truncate">{event.date || 'Jadwal segera hadir'}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                        <MapPin className="size-3.5 shrink-0 text-primary" />
-                        <span className="truncate">{event.location}</span>
-                    </div>
-                </CardContent>
-            </div>
-
-            <CardContent className="pt-0">
-                <Separator className="mb-2.5 bg-foreground/15" />
-                <div className="flex items-center justify-between gap-2">
-                    <span className="font-mono text-xs font-black text-foreground">
-                        {event.price}
-                    </span>
-                    <Button
-                        asChild
-                        size="sm"
-                        variant="default"
-                        className="border-2 border-foreground text-[11px] font-bold shadow-2xs h-7 px-2.5"
-                    >
-                        <Link href={eventUrl}>
-                            Lihat
-                        </Link>
-                    </Button>
-                </div>
-            </CardContent>
-        </Card>
-    );
-}
 
 export default function EventDetail({
     event,
@@ -418,12 +321,12 @@ export default function EventDetail({
                         </div>
 
                         {/* Cover Image */}
-                        <div className="relative mt-2 overflow-hidden border-2 border-foreground bg-secondary/20 shadow-md">
+                        <div className="relative mt-2 overflow-hidden border-2 border-foreground bg-white shadow-md">
                             {event.cover_image ? (
                                 <img
                                     src={`/storage/${event.cover_image}`}
                                     alt={event.title}
-                                    className="aspect-video w-full object-cover max-h-[480px]"
+                                    className="aspect-video w-full object-contain max-h-[580px]"
                                 />
                             ) : (
                                 <div className="flex aspect-video max-h-[380px] w-full items-center justify-center bg-gradient-to-br from-primary/10 via-secondary/20 to-accent/15">
@@ -1000,7 +903,7 @@ export default function EventDetail({
 
                             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                                 {otherEvents.map((other) => (
-                                    <OtherEventCard
+                                    <EventCard
                                         key={other.id}
                                         event={other}
                                         vendorUsername={vendor.username}
