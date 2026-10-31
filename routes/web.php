@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\Vendor\EventController;
 use App\Http\Controllers\VendorProfileController;
 use Illuminate\Support\Facades\Route;
@@ -16,6 +17,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('events/{event}', [EventController::class, 'show'])->name('events.show');
     });
 });
+
+// Order & Payment
+Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
+Route::get('/orders/{order:number}', [OrderController::class, 'show'])->name('orders.show');
+Route::post('/payments/notification', [OrderController::class, 'notification'])->name('payments.notification');
 
 require __DIR__.'/settings.php';
 

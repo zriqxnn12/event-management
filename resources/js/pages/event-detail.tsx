@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { home } from '@/routes';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -139,13 +139,34 @@ export default function EventDetail({
             return;
         }
 
+        if (!selectedTicket) {
+            return;
+        }
+
         setIsSubmitting(true);
-        setTimeout(() => {
-            setIsSubmitting(false);
-            setIsRegisterModalOpen(false);
-            setIsSuccessModalOpen(true);
-            toast.success('Pemesanan tiket berhasil diproses!');
-        }, 800);
+
+        router.post(
+            '/orders',
+            {
+                event_id: event.id,
+                ticket_id: selectedTicket.id,
+                name: regName,
+                email: regEmail,
+                phone: regPhone || null,
+                notes: regNotes || null,
+                quantity: ticketQuantity,
+            },
+            {
+                onError: (errors) => {
+                    setIsSubmitting(false);
+                    const firstError = Object.values(errors)[0];
+                    toast.error(typeof firstError === 'string' ? firstError : 'Terjadi kesalahan. Silakan coba lagi.');
+                },
+                onFinish: () => {
+                    setIsSubmitting(false);
+                },
+            },
+        );
     };
 
     const activeTickets = event.tickets.filter((t) => t.is_active);
@@ -199,13 +220,6 @@ export default function EventDetail({
                                     <span className="hidden sm:inline">Profil Vendor</span>
                                 </Link>
                             </Button>
-
-                            <Link href={home()} className="hidden md:flex items-center gap-2">
-                                <div className="flex size-7 items-center justify-center border-2 border-foreground bg-primary shadow-2xs">
-                                    <PartyPopper className="size-3.5 text-primary-foreground" />
-                                </div>
-                                <span className="font-mono text-sm font-black tracking-tight">eventoria.id</span>
-                            </Link>
                         </div>
 
                         <div className="flex items-center gap-2">
@@ -580,13 +594,13 @@ export default function EventDetail({
                                                     </p>
                                                 </div>
                                             </div>
-                                            <p className="text-xs text-muted-foreground font-medium">
+                                            {/* <p className="text-xs text-muted-foreground font-medium">
                                                 {event.online_url_protected
                                                     ? '🔒 Tautan meeting dilindungi dan akan otomatis dikirimkan ke email terdaftar setelah tiket berhasil didapatkan.'
                                                     : event.online_url
                                                       ? `Tautan akses: ${event.online_url}`
                                                       : 'Tautan meeting akan dibagikan kepada seluruh peserta terdaftar menjelang jadwal acara.'}
-                                            </p>
+                                            </p> */}
                                         </div>
                                     ) : (
                                         <div className="flex flex-col gap-3">
@@ -1012,7 +1026,7 @@ export default function EventDetail({
                                         disabled={isSubmitting}
                                         className="border-2 border-foreground font-black shadow-xs"
                                     >
-                                        {isSubmitting ? 'Memproses...' : 'Konfirmasi Pendaftaran'}
+                                        {isSubmitting ? 'Memproses...' : 'Konfirmasi Pemesanan'}
                                     </Button>
                                 </DialogFooter>
                             </form>

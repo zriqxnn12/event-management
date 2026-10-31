@@ -15,6 +15,7 @@ void createInertiaApp({
             case name === 'welcome':
             case name === 'vendor-profile':
             case name === 'event-detail':
+            case name === 'payment':
                 return null;
             case name.startsWith('auth/'):
                 return AuthLayout;
