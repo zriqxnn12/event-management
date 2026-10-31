@@ -90,14 +90,43 @@ class OrderController extends Controller
 
         if ($order->payment_status === 'pending' && $order->total_price > 0) {
             $midtrans = new MidtransService;
-            try {
-                $snapToken = $midtrans->getSnapToken($order);
-            } catch (\Throwable $e) {
-                Log::warning('Midtrans Snap token generation failed: '.$e->getMessage());
+
+            // Sync with Midtrans API directly (ensures status updates even in localhost where webhooks cannot reach)
+            $order = $midtrans->syncStatus($order);
+
+            if ($order->payment_status === 'pending') {
+                try {
+                    $snapToken = $midtrans->getSnapToken($order);
+                } catch (\Throwable $e) {
+                    Log::warning('Midtrans Snap token generation failed: '.$e->getMessage());
+                }
             }
         }
 
         return $this->renderPaymentPage($order, $snapToken);
+    }
+
+    /**
+     * Handle redirection callback from Midtrans Dashboard.
+     */
+    public function finish(Request $request): RedirectResponse
+    {
+        $orderNumber = $request->query('order_id');
+
+        if ($orderNumber) {
+            $order = Order::where('number', $orderNumber)->first();
+
+            if ($order) {
+                if ($order->payment_status === 'pending') {
+                    $midtrans = new MidtransService;
+                    $midtrans->syncStatus($order);
+                }
+
+                return redirect()->route('orders.show', $order);
+            }
+        }
+
+        return redirect()->route('home');
     }
 
     /**

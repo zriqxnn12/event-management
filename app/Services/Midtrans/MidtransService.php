@@ -3,8 +3,10 @@
 namespace App\Services\Midtrans;
 
 use App\Models\Order;
+use Illuminate\Support\Facades\Log;
 use Midtrans\Config;
 use Midtrans\Snap;
+use Midtrans\Transaction;
 
 class MidtransService
 {
@@ -43,6 +45,9 @@ class MidtransService
                     'name' => $order->ticket->name ?? 'Tiket Event',
                 ],
             ],
+            'callbacks' => [
+                'finish' => route('orders.show', $order),
+            ],
         ];
 
         $snapToken = Snap::getSnapToken($params);
@@ -51,5 +56,32 @@ class MidtransService
         $order->save();
 
         return $snapToken;
+    }
+
+    /**
+     * Sync transaction status directly with Midtrans API.
+     */
+    public function syncStatus(Order $order): Order
+    {
+        if ($order->payment_status === 'paid' || $order->total_price <= 0) {
+            return $order;
+        }
+
+        try {
+            $status = Transaction::status($order->number);
+            $transactionStatus = is_object($status) ? ($status->transaction_status ?? null) : ($status['transaction_status'] ?? null);
+
+            if (in_array($transactionStatus, ['capture', 'settlement'], true)) {
+                $order->update(['payment_status' => 'paid']);
+            } elseif (in_array($transactionStatus, ['cancel', 'expire'], true)) {
+                $order->update([
+                    'payment_status' => $transactionStatus === 'expire' ? 'expired' : 'cancelled',
+                ]);
+            }
+        } catch (\Throwable $e) {
+            Log::info("Midtrans status check for order {$order->number}: ".$e->getMessage());
+        }
+
+        return $order->fresh();
     }
 }

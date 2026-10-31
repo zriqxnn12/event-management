@@ -15,6 +15,7 @@ import {
     QrCode,
     Download,
     Printer,
+    RotateCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -142,17 +143,19 @@ export default function Payment({
         window.snap.pay(snapToken, {
             onSuccess: () => {
                 toast.success('Pembayaran berhasil!');
-                router.reload({ only: ['order'] });
+                router.reload();
             },
             onPending: () => {
                 toast.info('Menunggu konfirmasi pembayaran…');
-                router.reload({ only: ['order'] });
+                router.reload();
             },
             onError: () => {
                 toast.error('Pembayaran gagal. Silakan coba lagi.');
+                router.reload();
             },
             onClose: () => {
-                toast.info('Jendela pembayaran ditutup.');
+                toast.info('Memeriksa status pembayaran…');
+                router.reload();
             },
         });
     };
@@ -323,14 +326,29 @@ export default function Payment({
 
                     {/* ─── ACTION AREA ─── */}
                     {order.payment_status === 'pending' && order.total_price > 0 && snapToken && (
-                        <Button
-                            onClick={handlePayNow}
-                            size="lg"
-                            className="w-full border-2 border-foreground font-black shadow-sm text-base"
-                        >
-                            <CreditCard className="size-5 mr-2" />
-                            Bayar Sekarang
-                        </Button>
+                        <div className="flex flex-col gap-2.5">
+                            <Button
+                                onClick={handlePayNow}
+                                size="lg"
+                                className="w-full border-2 border-foreground font-black shadow-sm text-base"
+                            >
+                                <CreditCard className="size-5 mr-2" />
+                                Bayar Sekarang
+                            </Button>
+
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => {
+                                    toast.info('Memeriksa status pembayaran ke Midtrans…');
+                                    router.reload();
+                                }}
+                                className="w-full border-2 border-foreground font-bold shadow-2xs hover:bg-muted text-xs"
+                            >
+                                <RotateCw className="size-3.5 mr-1.5" />
+                                Sudah Bayar? Cek Status Pembayaran
+                            </Button>
+                        </div>
                     )}
 
                     {order.payment_status === 'pending' && order.total_price > 0 && !snapToken && (

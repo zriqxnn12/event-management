@@ -20,6 +20,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 // Order & Payment
 Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
+Route::get('/payments/finish', [OrderController::class, 'finish'])->name('payments.finish');
 Route::get('/orders/{order:number}', [OrderController::class, 'show'])->name('orders.show');
 Route::post('/payments/notification', [OrderController::class, 'notification'])->name('payments.notification');
 
