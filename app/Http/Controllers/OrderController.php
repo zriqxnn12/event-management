@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Akira\QrCode\Facades\QrCode;
 use App\Models\Event;
 use App\Models\EventTicket;
 use App\Models\Order;
@@ -136,6 +137,33 @@ class OrderController extends Controller
     {
         $order->load(['event.user', 'ticket']);
 
+        $qrCode = null;
+        if ($order->payment_status === 'paid') {
+            try {
+                $verificationUrl = route('orders.show', $order);
+                $paidAt = $order->updated_at?->translatedFormat('d M Y, H:i') ?? now()->translatedFormat('d M Y, H:i');
+                $priceDisplay = $order->total_price <= 0 ? 'GRATIS' : 'Rp '.number_format((float) $order->total_price, 0, ',', '.');
+
+                $payload = implode("\n", [
+                    '=== BUKTI PEMBAYARAN RESMI ===',
+                    "No. Pesanan : {$order->number}",
+                    'Status      : LUNAS / TERKONFIRMASI',
+                    "Acara       : {$order->event->title}",
+                    "Tiket       : {$order->ticket->name} ({$order->quantity}x)",
+                    "Total       : {$priceDisplay}",
+                    "Peserta     : {$order->attendee_name}",
+                    "Email       : {$order->attendee_email}",
+                    "Waktu       : {$paidAt} WIB",
+                    "Verifikasi  : {$verificationUrl}",
+                ]);
+
+                $svg = (string) QrCode::size(240)->margin(1)->generate($payload);
+                $qrCode = 'data:image/svg+xml;base64,'.base64_encode($svg);
+            } catch (\Throwable $e) {
+                Log::warning('QR Code generation failed: '.$e->getMessage());
+            }
+        }
+
         return Inertia::render('payment', [
             'order' => [
                 'id' => $order->id,
@@ -160,6 +188,7 @@ class OrderController extends Controller
                 'username' => $order->event->user->username ?? '',
             ],
             'snapToken' => $snapToken,
+            'qrCode' => $qrCode,
             'midtransClientKey' => config('midtrans.client_key'),
             'midtransIsProduction' => config('midtrans.is_production'),
         ]);

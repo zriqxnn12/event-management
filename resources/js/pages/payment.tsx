@@ -12,6 +12,9 @@ import {
     Ticket,
     AlertCircle,
     Clock,
+    QrCode,
+    Download,
+    Printer,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -41,6 +44,7 @@ interface PaymentProps {
     snapToken: string | null;
     midtransClientKey: string;
     midtransIsProduction: boolean;
+    qrCode?: string | null;
 }
 
 declare global {
@@ -94,6 +98,7 @@ export default function Payment({
     snapToken,
     midtransClientKey,
     midtransIsProduction,
+    qrCode,
 }: PaymentProps) {
     const snapScriptLoaded = useRef(false);
 
@@ -189,11 +194,73 @@ export default function Payment({
                             )}
                             {order.payment_status === 'paid' && (
                                 <p className="text-xs font-medium opacity-80">
-                                    Tiket Anda telah dikonfirmasi. Cek email untuk e-tiket.
+                                    Tiket Anda telah terverifikasi. Simpan atau tunjukkan QR Code di bawah untuk akses check-in resmi.
                                 </p>
                             )}
                         </div>
                     </div>
+
+                    {/* ─── QR CODE BUKTI PEMBAYARAN (DI ATAS RINCIAN PESANAN) ─── */}
+                    {order.payment_status === 'paid' && qrCode && (
+                        <Card className="border-2 border-foreground shadow-md bg-card text-center overflow-hidden mb-6">
+                            <CardHeader className="border-b-2 border-foreground bg-muted/30 py-3">
+                                <CardTitle className="flex items-center justify-center gap-2 text-sm font-black uppercase tracking-wider">
+                                    <QrCode className="size-4 text-primary" />
+                                    QR Code Bukti Pembayaran
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="pt-6 pb-6 flex flex-col items-center gap-4">
+                                {/* QR Code Container with scan border */}
+                                <div className="relative p-3 border-2 border-foreground bg-white shadow-xs rounded-none">
+                                    <img
+                                        src={qrCode}
+                                        alt={`QR Code Bukti Pembayaran #${order.number}`}
+                                        className="size-48 sm:size-56 object-contain"
+                                    />
+                                </div>
+
+                                <div className="flex flex-col items-center gap-1">
+                                    <span className="font-mono text-xs font-black tracking-widest px-2.5 py-1 border-2 border-foreground bg-secondary/20">
+                                        {order.number}
+                                    </span>
+                                    <span className="text-[11px] text-muted-foreground font-semibold mt-1 max-w-sm">
+                                        Scan QR code untuk melihat rincian bukti transaksi & validasi tiket resmi
+                                    </span>
+                                </div>
+
+                                {/* Download & Print Actions */}
+                                <div className="flex flex-wrap items-center justify-center gap-2 w-full pt-2 border-t border-foreground/10">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                            const link = document.createElement('a');
+                                            link.href = qrCode;
+                                            link.download = `qrcode-bukti-pembayaran-${order.number}.svg`;
+                                            link.click();
+                                            toast.success('QR Code berhasil diunduh!');
+                                        }}
+                                        className="border-2 border-foreground font-bold shadow-2xs hover:bg-muted text-xs"
+                                    >
+                                        <Download className="size-3.5 mr-1.5" />
+                                        Unduh QR Code
+                                    </Button>
+
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => window.print()}
+                                        className="border-2 border-foreground font-bold shadow-2xs hover:bg-muted text-xs"
+                                    >
+                                        <Printer className="size-3.5 mr-1.5" />
+                                        Cetak Bukti Pembayaran
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
 
                     {/* ─── ORDER SUMMARY CARD ─── */}
                     <Card className="border-2 border-foreground shadow-sm mb-6">
@@ -207,7 +274,7 @@ export default function Payment({
                             {/* Order number */}
                             <div className="flex items-center justify-between text-sm">
                                 <span className="text-muted-foreground font-semibold">Nomor Pesanan</span>
-                                <span className="font-mono font-black">{order.number}</span>
+                                <span className="font-mono font-black">#{order.number}</span>
                             </div>
 
                             <Separator className="bg-foreground/10" />
@@ -226,7 +293,7 @@ export default function Payment({
                                     </div>
                                 </div>
                                 <Badge
-                                    variant="outline"
+                                    variant="default"
                                     className="border-2 border-foreground font-mono font-black"
                                 >
                                     {order.formatted_price}
@@ -286,16 +353,10 @@ export default function Payment({
 
                     {order.payment_status === 'paid' && (
                         <div className="flex flex-col gap-3">
-                            <div className="flex items-center justify-center gap-2 border-2 border-emerald-500 bg-emerald-50 dark:bg-emerald-950 p-4 text-emerald-800 dark:text-emerald-200">
-                                <CheckCircle2 className="size-5 shrink-0" />
-                                <span className="font-black text-sm">
-                                    Pembayaran dikonfirmasi — E-tiket dikirim ke email Anda.
-                                </span>
-                            </div>
                             <Button
                                 asChild
                                 variant="outline"
-                                className="w-full border-2 border-foreground font-bold"
+                                className="w-full border-2 border-foreground font-bold shadow-2xs hover:bg-muted"
                             >
                                 <Link href={vendorEventUrl}>Kembali ke Halaman Event</Link>
                             </Button>

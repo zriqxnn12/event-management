@@ -825,7 +825,7 @@ export default function EventDetail({
                                                                     </span>
                                                                 ) : ticket.remaining_quota !== null && ticket.remaining_quota <= 10 ? (
                                                                     <span className="text-[10px] font-black text-amber-600">
-                                                                        Sisa {ticket.remaining_quota} tiket!
+                                                                        Sisa {ticket.remaining_quota} tiket
                                                                     </span>
                                                                 ) : null}
                                                             </div>
