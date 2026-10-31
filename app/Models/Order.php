@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\DB;
 
 /**
  * @property int $id
@@ -63,5 +64,23 @@ class Order extends Model
     public function getRouteKeyName(): string
     {
         return 'number';
+    }
+
+    /**
+     * Mark order as paid and increment ticket sold count.
+     */
+    public function markAsPaid(): void
+    {
+        if ($this->payment_status === 'paid') {
+            return;
+        }
+
+        DB::transaction(function () {
+            $this->update(['payment_status' => 'paid']);
+
+            if ($this->event_ticket_id) {
+                $this->ticket()?->increment('sold', $this->quantity);
+            }
+        });
     }
 }

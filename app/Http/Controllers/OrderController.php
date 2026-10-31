@@ -66,7 +66,7 @@ class OrderController extends Controller
 
         // For free tickets, mark as paid immediately
         if ($totalPrice <= 0) {
-            $order->update(['payment_status' => 'paid']);
+            $order->markAsPaid();
 
             return redirect()->route('orders.show', $order);
         }
@@ -150,7 +150,7 @@ class OrderController extends Controller
             $transactionStatus = $request->transaction_status;
 
             if (in_array($transactionStatus, ['capture', 'settlement'], true)) {
-                $order->update(['payment_status' => 'paid']);
+                $order->markAsPaid();
             } elseif (in_array($transactionStatus, ['cancel', 'expire'], true)) {
                 $order->update(['payment_status' => $transactionStatus === 'expire' ? 'expired' : 'cancelled']);
             }

@@ -820,14 +820,18 @@ export default function EventDetail({
                                                                     {ticket.formatted_price}
                                                                 </div>
                                                                 {ticket.is_sold_out ? (
-                                                                    <span className="text-[10px] font-black text-red-600 uppercase">
+                                                                    <span className="inline-block mt-1 border-2 border-red-600 bg-red-100 dark:bg-red-950 px-1.5 py-0.5 text-[10px] font-black text-red-700 dark:text-red-300 uppercase shadow-2xs">
                                                                         Habis Terjual
                                                                     </span>
-                                                                ) : ticket.remaining_quota !== null && ticket.remaining_quota <= 10 ? (
-                                                                    <span className="text-[10px] font-black text-amber-600">
+                                                                ) : ticket.remaining_quota !== null ? (
+                                                                    <span className="inline-block mt-1 border-2 border-foreground bg-amber-100 dark:bg-amber-950 px-1.5 py-0.5 text-[10px] font-black text-amber-900 dark:text-amber-200 shadow-2xs">
                                                                         Sisa {ticket.remaining_quota} tiket
                                                                     </span>
-                                                                ) : null}
+                                                                ) : (
+                                                                    <span className="text-[10px] text-muted-foreground font-semibold">
+                                                                        Tersedia
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                         </div>
 
@@ -859,7 +863,7 @@ export default function EventDetail({
                                                                     ? 'Tidak Tersedia'
                                                                     : ticket.type === 'free'
                                                                       ? 'Daftar Gratis'
-                                                                      : `Beli Tiket (${ticket.formatted_price})`}
+                                                                      : `Beli Tiket`}
                                                             </Button>
                                                         </div>
                                                     </div>
@@ -949,8 +953,13 @@ export default function EventDetail({
                                         <span className="font-black text-sm">{selectedTicket.name}</span>
                                         <span className="font-mono font-black text-sm">{selectedTicket.formatted_price}</span>
                                     </div>
-                                    <div className="text-xs text-muted-foreground font-semibold mt-0.5">
-                                        {event.title}
+                                    <div className="flex items-center justify-between text-xs text-muted-foreground font-semibold mt-1">
+                                        <span className="truncate">{event.title}</span>
+                                        {selectedTicket.remaining_quota !== null && (
+                                            <span className="shrink-0 text-amber-700 dark:text-amber-300 font-bold ml-2">
+                                                Sisa {selectedTicket.remaining_quota} tiket
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
 

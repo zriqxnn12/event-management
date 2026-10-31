@@ -72,7 +72,7 @@ class MidtransService
             $transactionStatus = is_object($status) ? ($status->transaction_status ?? null) : ($status['transaction_status'] ?? null);
 
             if (in_array($transactionStatus, ['capture', 'settlement'], true)) {
-                $order->update(['payment_status' => 'paid']);
+                $order->markAsPaid();
             } elseif (in_array($transactionStatus, ['cancel', 'expire'], true)) {
                 $order->update([
                     'payment_status' => $transactionStatus === 'expire' ? 'expired' : 'cancelled',

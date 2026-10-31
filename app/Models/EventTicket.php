@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
@@ -54,6 +55,22 @@ class EventTicket extends Model
     public function event(): BelongsTo
     {
         return $this->belongsTo(Event::class);
+    }
+
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class, 'event_ticket_id');
+    }
+
+    /**
+     * Recalculate and update the sold count based on paid orders.
+     */
+    public function recalculateSold(): int
+    {
+        $soldCount = (int) $this->orders()->where('payment_status', 'paid')->sum('quantity');
+        $this->update(['sold' => $soldCount]);
+
+        return $soldCount;
     }
 
     public function getRemainingQuotaAttribute(): ?int
