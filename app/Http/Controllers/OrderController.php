@@ -134,6 +134,8 @@ class OrderController extends Controller
      */
     public function notification(Request $request): JsonResponse
     {
+        Log::info('Midtrans webhook received:', $request->all());
+
         $serverKey = config('midtrans.server_key');
         $hashed = hash(
             'sha512',
@@ -141,6 +143,8 @@ class OrderController extends Controller
         );
 
         if ($hashed !== $request->signature_key) {
+            Log::warning('Midtrans webhook invalid signature for order '.$request->order_id);
+
             return response()->json(['status' => 'invalid signature'], 403);
         }
 
