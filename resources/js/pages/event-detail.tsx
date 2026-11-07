@@ -335,7 +335,7 @@ export default function EventDetail({
                         </div>
 
                         {/* Cover Image */}
-                        <div className="relative mt-2 overflow-hidden border-2 border-foreground bg-white shadow-md">
+                        <div className="relative mt-2 overflow-hidden border-2 border-foreground bg-card shadow-md">
                             {event.cover_image ? (
                                 <img
                                     src={`/storage/${event.cover_image}`}
