@@ -14,10 +14,12 @@ import {
     Clock,
     QrCode,
     Download,
+    FileDown,
     Printer,
     RotateCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { receipt } from '@/routes/orders';
 
 interface PaymentProps {
     order: {
@@ -160,6 +162,43 @@ export default function Payment({
         });
     };
 
+    const handleDownloadQrCodePng = () => {
+        if (!qrCode) return;
+
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const size = 600;
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                toast.error('Gagal membuat canvas gambar.');
+                return;
+            }
+
+            // Solid clean white background
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, size, size);
+
+            // Draw QR code centered with padding for reliable scanning
+            const padding = 40;
+            ctx.drawImage(img, padding, padding, size - padding * 2, size - padding * 2);
+
+            const link = document.createElement('a');
+            link.href = canvas.toDataURL('image/png');
+            link.download = `qrcode-bukti-pembayaran-${order.number}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            toast.success('QR Code berhasil diunduh sebagai PNG!');
+        };
+        img.onerror = () => {
+            toast.error('Gagal memproses QR Code untuk diunduh.');
+        };
+        img.src = qrCode;
+    };
+
     return (
         <>
             <Head title={`Pembayaran #${order.number} — ${event.title}`} />
@@ -237,28 +276,23 @@ export default function Payment({
                                         type="button"
                                         variant="outline"
                                         size="sm"
-                                        onClick={() => {
-                                            const link = document.createElement('a');
-                                            link.href = qrCode;
-                                            link.download = `qrcode-bukti-pembayaran-${order.number}.svg`;
-                                            link.click();
-                                            toast.success('QR Code berhasil diunduh!');
-                                        }}
+                                        onClick={handleDownloadQrCodePng}
                                         className="border-2 border-foreground font-bold shadow-2xs hover:bg-muted text-xs"
                                     >
                                         <Download className="size-3.5 mr-1.5" />
-                                        Unduh QR Code
+                                        Unduh QR Code (PNG)
                                     </Button>
 
                                     <Button
-                                        type="button"
+                                        asChild
                                         variant="outline"
                                         size="sm"
-                                        onClick={() => window.print()}
                                         className="border-2 border-foreground font-bold shadow-2xs hover:bg-muted text-xs"
                                     >
-                                        <Printer className="size-3.5 mr-1.5" />
-                                        Cetak Bukti Pembayaran
+                                        <a href={receipt.url(order.number)}>
+                                            <FileDown className="size-3.5 mr-1.5" />
+                                            Unduh Bukti Pembayaran (PDF)
+                                        </a>
                                     </Button>
                                 </div>
                             </CardContent>

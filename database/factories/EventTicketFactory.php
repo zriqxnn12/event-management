@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Event;
 use App\Models\EventTicket;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -18,7 +19,13 @@ class EventTicketFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'event_id' => Event::factory(),
+            'name' => 'Regular Pass',
+            'type' => 'paid',
+            'price' => 100000,
+            'quota' => 100,
+            'sold' => 0,
+            'is_active' => true,
         ];
     }
 }

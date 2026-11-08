@@ -7,9 +7,11 @@ use App\Models\Event;
 use App\Models\EventTicket;
 use App\Models\Order;
 use App\Services\Midtrans\MidtransService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response as HttpResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
@@ -164,38 +166,81 @@ class OrderController extends Controller
     }
 
     /**
+     * Download the official payment receipt / ticket PDF.
+     */
+    public function receipt(Request $request, Order $order): HttpResponse
+    {
+        if ($order->payment_status === 'pending' && $order->total_price > 0) {
+            $midtrans = new MidtransService;
+            $order = $midtrans->syncStatus($order);
+        }
+
+        abort_if($order->payment_status !== 'paid', 403, 'Bukti pembayaran hanya tersedia untuk pesanan yang telah lunas.');
+
+        $order->load(['event.user', 'ticket']);
+        $qrCode = $this->generateQrCode($order);
+
+        $pdf = Pdf::loadView('pdf.receipt', [
+            'order' => $order,
+            'qrCode' => $qrCode,
+        ]);
+
+        $pdf->setPaper('a4', 'portrait');
+
+        $fileName = "bukti-pembayaran-{$order->number}.pdf";
+
+        if ($request->boolean('stream')) {
+            return $pdf->stream($fileName);
+        }
+
+        return $pdf->download($fileName);
+    }
+
+    /**
+     * Generate official QR code data URL for a paid order.
+     */
+    private function generateQrCode(Order $order): ?string
+    {
+        if ($order->payment_status !== 'paid') {
+            return null;
+        }
+
+        try {
+            $verificationUrl = route('orders.show', $order);
+            $paidAt = $order->updated_at?->translatedFormat('d M Y, H:i') ?? now()->translatedFormat('d M Y, H:i');
+            $priceDisplay = $order->total_price <= 0 ? 'GRATIS' : 'Rp '.number_format((float) $order->total_price, 0, ',', '.');
+
+            $payload = implode("\n", [
+                '=== BUKTI PEMBAYARAN RESMI ===',
+                "No. Pesanan : {$order->number}",
+                'Status      : LUNAS / TERKONFIRMASI',
+                "Acara       : {$order->event->title}",
+                "Tiket       : {$order->ticket->name} ({$order->quantity}x)",
+                "Total       : {$priceDisplay}",
+                "Peserta     : {$order->attendee_name}",
+                "Email       : {$order->attendee_email}",
+                "Waktu       : {$paidAt} WIB",
+                "Verifikasi  : {$verificationUrl}",
+            ]);
+
+            $svg = (string) QrCode::size(240)->margin(1)->generate($payload);
+
+            return 'data:image/svg+xml;base64,'.base64_encode($svg);
+        } catch (\Throwable $e) {
+            Log::warning('QR Code generation failed: '.$e->getMessage());
+
+            return null;
+        }
+    }
+
+    /**
      * Render the Inertia payment page with the order data.
      */
     private function renderPaymentPage(Order $order, ?string $snapToken): Response
     {
         $order->load(['event.user', 'ticket']);
 
-        $qrCode = null;
-        if ($order->payment_status === 'paid') {
-            try {
-                $verificationUrl = route('orders.show', $order);
-                $paidAt = $order->updated_at?->translatedFormat('d M Y, H:i') ?? now()->translatedFormat('d M Y, H:i');
-                $priceDisplay = $order->total_price <= 0 ? 'GRATIS' : 'Rp '.number_format((float) $order->total_price, 0, ',', '.');
-
-                $payload = implode("\n", [
-                    '=== BUKTI PEMBAYARAN RESMI ===',
-                    "No. Pesanan : {$order->number}",
-                    'Status      : LUNAS / TERKONFIRMASI',
-                    "Acara       : {$order->event->title}",
-                    "Tiket       : {$order->ticket->name} ({$order->quantity}x)",
-                    "Total       : {$priceDisplay}",
-                    "Peserta     : {$order->attendee_name}",
-                    "Email       : {$order->attendee_email}",
-                    "Waktu       : {$paidAt} WIB",
-                    "Verifikasi  : {$verificationUrl}",
-                ]);
-
-                $svg = (string) QrCode::size(240)->margin(1)->generate($payload);
-                $qrCode = 'data:image/svg+xml;base64,'.base64_encode($svg);
-            } catch (\Throwable $e) {
-                Log::warning('QR Code generation failed: '.$e->getMessage());
-            }
-        }
+        $qrCode = $this->generateQrCode($order);
 
         return Inertia::render('payment', [
             'order' => [
