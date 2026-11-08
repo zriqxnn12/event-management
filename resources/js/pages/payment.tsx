@@ -1,4 +1,3 @@
-import { useEffect, useRef } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import { router } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
@@ -45,25 +44,8 @@ interface PaymentProps {
         username: string;
     };
     snapToken: string | null;
-    midtransClientKey: string;
     midtransIsProduction: boolean;
     qrCode?: string | null;
-}
-
-declare global {
-    interface Window {
-        snap: {
-            pay: (
-                token: string,
-                options: {
-                    onSuccess?: (result: unknown) => void;
-                    onPending?: (result: unknown) => void;
-                    onError?: (result: unknown) => void;
-                    onClose?: () => void;
-                },
-            ) => void;
-        };
-    }
 }
 
 const STATUS_CONFIG = {
@@ -99,37 +81,17 @@ export default function Payment({
     ticket,
     vendor,
     snapToken,
-    midtransClientKey,
     midtransIsProduction,
     qrCode,
 }: PaymentProps) {
-    const snapScriptLoaded = useRef(false);
 
-    const snapUrl = midtransIsProduction
-        ? 'https://app.midtrans.com/snap/snap.js'
-        : 'https://app.sandbox.midtrans.com/snap/snap.js';
+    const midtransSnapUrl = midtransIsProduction
+        ? `https://app.midtrans.com/snap/v3/redirection/${snapToken}`
+        : `https://app.sandbox.midtrans.com/snap/v3/redirection/${snapToken}`;
 
     const vendorEventUrl = `/${vendor.username}/${event.slug}`;
     const statusConfig = STATUS_CONFIG[order.payment_status];
     const StatusIcon = statusConfig.icon;
-
-    useEffect(() => {
-        if (!snapToken || snapScriptLoaded.current) {
-            return;
-        }
-
-        const script = document.createElement('script');
-        script.src = snapUrl;
-        script.setAttribute('data-client-key', midtransClientKey);
-        script.onload = () => {
-            snapScriptLoaded.current = true;
-        };
-        document.head.appendChild(script);
-
-        return () => {
-            // Leave the script in place; removing it could break snap on re-render
-        };
-    }, [snapToken, snapUrl, midtransClientKey]);
 
     const handlePayNow = () => {
         if (!snapToken) {
@@ -137,29 +99,7 @@ export default function Payment({
             return;
         }
 
-        if (!window.snap) {
-            toast.error('Layanan pembayaran belum siap. Silakan muat ulang halaman.');
-            return;
-        }
-
-        window.snap.pay(snapToken, {
-            onSuccess: () => {
-                toast.success('Pembayaran berhasil!');
-                router.reload();
-            },
-            onPending: () => {
-                toast.info('Menunggu konfirmasi pembayaran…');
-                router.reload();
-            },
-            onError: () => {
-                toast.error('Pembayaran gagal. Silakan coba lagi.');
-                router.reload();
-            },
-            onClose: () => {
-                toast.info('Memeriksa status pembayaran…');
-                router.reload();
-            },
-        });
+        window.open(midtransSnapUrl, '_blank', 'noopener,noreferrer');
     };
 
     const handleDownloadQrCodePng = () => {
