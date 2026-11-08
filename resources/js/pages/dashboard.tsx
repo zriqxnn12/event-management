@@ -9,7 +9,6 @@ import {
     Plus,
     ExternalLink,
     Activity,
-    Sparkles,
     CheckCircle2,
     Clock,
     AlertCircle,
@@ -95,128 +94,22 @@ export type DashboardProps = {
     upcoming_events?: UpcomingEventItem[];
 };
 
-// Fallback sample data to provide realistic preview when the account is newly created
-const MOCK_SALES_TREND: SalesTrendItem[] = [
-    { date: '2026-10-25', label: '25 Okt', day: 'Min', revenue: 750000, tickets: 5, orders_count: 3 },
-    { date: '2026-10-26', label: '26 Okt', day: 'Sen', revenue: 1200000, tickets: 8, orders_count: 6 },
-    { date: '2026-10-27', label: '27 Okt', day: 'Sel', revenue: 950000, tickets: 6, orders_count: 4 },
-    { date: '2026-10-28', label: '28 Okt', day: 'Rab', revenue: 2100000, tickets: 14, orders_count: 9 },
-    { date: '2026-10-29', label: '29 Okt', day: 'Kam', revenue: 1800000, tickets: 12, orders_count: 7 },
-    { date: '2026-10-30', label: '30 Okt', day: 'Jum', revenue: 3250000, tickets: 20, orders_count: 15 },
-    { date: '2026-10-31', label: '31 Okt', day: 'Sab', revenue: 4500000, tickets: 28, orders_count: 18 },
-    { date: '2026-11-01', label: '01 Nov', day: 'Min', revenue: 3900000, tickets: 24, orders_count: 16 },
-    { date: '2026-11-02', label: '02 Nov', day: 'Sen', revenue: 2200000, tickets: 15, orders_count: 10 },
-    { date: '2026-11-03', label: '03 Nov', day: 'Sel', revenue: 2800000, tickets: 18, orders_count: 12 },
-    { date: '2026-11-04', label: '04 Nov', day: 'Rab', revenue: 3600000, tickets: 22, orders_count: 14 },
-    { date: '2026-11-05', label: '05 Nov', day: 'Kam', revenue: 4100000, tickets: 26, orders_count: 17 },
-    { date: '2026-11-06', label: '06 Nov', day: 'Jum', revenue: 5200000, tickets: 34, orders_count: 22 },
-    { date: '2026-11-07', label: '07 Nov', day: 'Sab', revenue: 4800000, tickets: 30, orders_count: 19 },
-];
+const DEFAULT_STATS: DashboardStats = {
+    total_revenue: 0,
+    total_tickets_sold: 0,
+    total_events: 0,
+    published_events: 0,
+    draft_events: 0,
+    completed_events: 0,
+    total_attendees: 0,
+    total_quota: 0,
+};
 
-const MOCK_CATEGORIES: CategoryStat[] = [
-    { name: 'Workshop & Seminar', count: 4 },
-    { name: 'Teknologi & Koding', count: 3 },
-    { name: 'Musik & Festival', count: 2 },
-    { name: 'Bisnis & Karir', count: 1 },
-];
-
-const MOCK_RECENT_ORDERS: RecentOrder[] = [
-    {
-        id: 101,
-        number: 'ORD-89F3A1',
-        attendee_name: 'Budi Santoso',
-        attendee_email: 'budi.santoso@example.com',
-        event_title: 'Fullstack Laravel & React Summit 2026',
-        event_slug: 'fullstack-laravel-react-summit-2026',
-        ticket_name: 'Early Bird VIP',
-        quantity: 2,
-        total_price: 500000,
-        payment_status: 'paid',
-        created_at_human: '10 menit lalu',
-        created_at: '07 Nov 2026, 21:45',
-    },
-    {
-        id: 102,
-        number: 'ORD-72E4B9',
-        attendee_name: 'Siti Nurhaliza',
-        attendee_email: 'siti.nur@example.com',
-        event_title: 'UI/UX Design Masterclass & Portfolio Review',
-        event_slug: 'ui-ux-design-masterclass',
-        ticket_name: 'General Admission',
-        quantity: 1,
-        total_price: 150000,
-        payment_status: 'paid',
-        created_at_human: '45 menit lalu',
-        created_at: '07 Nov 2026, 21:10',
-    },
-    {
-        id: 103,
-        number: 'ORD-51D9C3',
-        attendee_name: 'Ahmad Fauzi',
-        attendee_email: 'fauzi.ahmad@example.com',
-        event_title: 'Indie Tech Meetup Jakarta',
-        event_slug: 'indie-tech-meetup-jakarta',
-        ticket_name: 'Regular Pass',
-        quantity: 1,
-        total_price: 75000,
-        payment_status: 'pending',
-        created_at_human: '2 jam lalu',
-        created_at: '07 Nov 2026, 19:50',
-    },
-    {
-        id: 104,
-        number: 'ORD-44B12A',
-        attendee_name: 'Dina Permata',
-        attendee_email: 'dina.permata@example.com',
-        event_title: 'Fullstack Laravel & React Summit 2026',
-        event_slug: 'fullstack-laravel-react-summit-2026',
-        ticket_name: 'Presale Regular',
-        quantity: 1,
-        total_price: 250000,
-        payment_status: 'paid',
-        created_at_human: '4 jam lalu',
-        created_at: '07 Nov 2026, 17:30',
-    },
-];
-
-const MOCK_UPCOMING_EVENTS: UpcomingEventItem[] = [
-    {
-        id: 201,
-        title: 'Fullstack Laravel & React Summit 2026',
-        slug: 'fullstack-laravel-react-summit-2026',
-        category: 'Teknologi & Koding',
-        type: 'hybrid',
-        status: 'published',
-        start_date: '15 Nov 2026, 09:00',
-        cover_image: null,
-        tickets_sold: 145,
-        tickets_quota: 200,
-    },
-    {
-        id: 202,
-        title: 'UI/UX Design Masterclass & Portfolio Review',
-        slug: 'ui-ux-design-masterclass',
-        category: 'Workshop & Seminar',
-        type: 'online',
-        status: 'published',
-        start_date: '20 Nov 2026, 13:00',
-        cover_image: null,
-        tickets_sold: 48,
-        tickets_quota: 50,
-    },
-    {
-        id: 203,
-        title: 'Indie Tech Meetup Jakarta',
-        slug: 'indie-tech-meetup-jakarta',
-        category: 'Bisnis & Karir',
-        type: 'offline',
-        status: 'published',
-        start_date: '28 Nov 2026, 18:30',
-        cover_image: null,
-        tickets_sold: 30,
-        tickets_quota: 80,
-    },
-];
+const DEFAULT_TYPES: EventTypeBreakdown = {
+    online: 0,
+    offline: 0,
+    hybrid: 0,
+};
 
 function formatCurrency(val: number): string {
     return new Intl.NumberFormat('id-ID', {
@@ -241,90 +134,15 @@ export default function Dashboard({
     const { auth } = usePage<{ auth: { user: User } }>().props;
     const user = auth.user;
 
-    // Detect if this account has zero real events or orders yet
-    const hasRealData = (rawStats?.total_events ?? 0) > 0 || (rawStats?.total_tickets_sold ?? 0) > 0;
-    const [useDemoData, setUseDemoData] = useState(!hasRealData);
     const [chartMode, setChartMode] = useState<'revenue' | 'tickets'>('revenue');
     const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
-    // Active dataset based on toggle or actual data
-    const stats: DashboardStats = useMemo(() => {
-        if (!useDemoData && rawStats) {
-            return rawStats;
-        }
-        if (useDemoData) {
-            return {
-                total_revenue: 41250000,
-                total_tickets_sold: 223,
-                total_events: 5,
-                published_events: 3,
-                draft_events: 1,
-                completed_events: 1,
-                total_attendees: 198,
-                total_quota: 330,
-            };
-        }
-        return {
-            total_revenue: 0,
-            total_tickets_sold: 0,
-            total_events: 0,
-            published_events: 0,
-            draft_events: 0,
-            completed_events: 0,
-            total_attendees: 0,
-            total_quota: 0,
-        };
-    }, [useDemoData, rawStats]);
-
-    const salesTrend: SalesTrendItem[] = useMemo(() => {
-        if (!useDemoData && rawSalesTrend && rawSalesTrend.length > 0) {
-            return rawSalesTrend;
-        }
-        if (useDemoData) {
-            return MOCK_SALES_TREND;
-        }
-        return rawSalesTrend ?? [];
-    }, [useDemoData, rawSalesTrend]);
-
-    const categories: CategoryStat[] = useMemo(() => {
-        if (!useDemoData && rawCategories && rawCategories.length > 0) {
-            return rawCategories;
-        }
-        if (useDemoData) {
-            return MOCK_CATEGORIES;
-        }
-        return rawCategories ?? [];
-    }, [useDemoData, rawCategories]);
-
-    const types: EventTypeBreakdown = useMemo(() => {
-        if (!useDemoData && rawTypes) {
-            return rawTypes;
-        }
-        if (useDemoData) {
-            return { online: 2, offline: 2, hybrid: 1 };
-        }
-        return rawTypes ?? { online: 0, offline: 0, hybrid: 0 };
-    }, [useDemoData, rawTypes]);
-
-    const recentOrders: RecentOrder[] = useMemo(() => {
-        if (!useDemoData && rawRecentOrders && rawRecentOrders.length > 0) {
-            return rawRecentOrders;
-        }
-        if (useDemoData) {
-            return MOCK_RECENT_ORDERS;
-        }
-        return rawRecentOrders ?? [];
-    }, [useDemoData, rawRecentOrders]);
-
-    const upcomingEvents: UpcomingEventItem[] = useMemo(() => {
-        if (!useDemoData && rawUpcomingEvents && rawUpcomingEvents.length > 0) {
-            return rawUpcomingEvents;
-        }
-        if (useDemoData) {
-            return MOCK_UPCOMING_EVENTS;
-        }
-        return rawUpcomingEvents ?? [];
-    }, [useDemoData, rawUpcomingEvents]);
+    const stats = rawStats ?? DEFAULT_STATS;
+    const salesTrend = rawSalesTrend ?? [];
+    const categories = rawCategories ?? [];
+    const types = rawTypes ?? DEFAULT_TYPES;
+    const recentOrders = rawRecentOrders ?? [];
+    const upcomingEvents = rawUpcomingEvents ?? [];
 
     // Chart calculations
     const chartWidth = 720;
@@ -394,12 +212,14 @@ export default function Dashboard({
         ? 100
         : 0;
 
-    // Peak metric from sales trend
+    // Peak metric from sales trend (only if > 0)
     const peakMetric = useMemo(() => {
         if (salesTrend.length === 0) return null;
-        return [...salesTrend].sort((a, b) =>
+        const highest = [...salesTrend].sort((a, b) =>
             chartMode === 'revenue' ? b.revenue - a.revenue : b.tickets - a.tickets
         )[0];
+        const val = chartMode === 'revenue' ? highest.revenue : highest.tickets;
+        return val > 0 ? highest : null;
     }, [salesTrend, chartMode]);
 
     const averagePerDay = useMemo(() => {
@@ -408,40 +228,15 @@ export default function Dashboard({
         return Math.round(total / salesTrend.length);
     }, [salesTrend, chartMode]);
 
+    const hasAnySalesActivity = useMemo(() => {
+        return salesTrend.some((d) => d.revenue > 0 || d.tickets > 0);
+    }, [salesTrend]);
+
     return (
         <>
             <Head title="Vendor Dashboard" />
 
             <div className="flex h-full flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8">
-                {/* Demo Mode Notification Banner if vendor has no data */}
-                {!hasRealData && (
-                    <div className="flex flex-col items-start justify-between gap-3 rounded-xl border-2 border-foreground bg-amber-50 p-4 shadow-[3px_3px_0px_0px_#000] sm:flex-row sm:items-center dark:bg-amber-950/40 dark:shadow-[3px_3px_0px_0px_#fff]">
-                        <div className="flex items-center gap-3">
-                            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border-2 border-foreground bg-amber-300 font-bold text-black shadow-[2px_2px_0px_0px_#000]">
-                                <Sparkles className="size-5" />
-                            </div>
-                            <div>
-                                <p className="font-bold text-foreground">
-                                    {useDemoData ? 'Mode Demo Sedang Aktif' : 'Belum Ada Data Penjualan'}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                    {useDemoData
-                                        ? 'Menampilkan contoh visual grafik & statistik agar Anda dapat melihat tampilan dashboard ketika event dan tiket aktif.'
-                                        : 'Data yang ditampilkan adalah data asli Anda yang masih kosong. Buat event pertamamu untuk mulai menjual tiket!'}
-                                </p>
-                            </div>
-                        </div>
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            className="border-2 border-foreground font-bold shadow-[2px_2px_0px_0px_#000] hover:bg-amber-200 dark:hover:bg-amber-900"
-                            onClick={() => setUseDemoData(!useDemoData)}
-                        >
-                            {useDemoData ? 'Tampilkan Data Asli (Kosong)' : 'Tampilkan Contoh Demo'}
-                        </Button>
-                    </div>
-                )}
-
                 {/* Welcome Header */}
                 <div className="flex flex-col gap-4 rounded-2xl border-2 border-foreground bg-card p-6 shadow-[4px_4px_0px_0px_#000] md:flex-row md:items-center md:justify-between dark:shadow-[4px_4px_0px_0px_#fff]">
                     <div className="space-y-1">
@@ -665,7 +460,9 @@ export default function Dashboard({
                         <div>
                             <span className="text-[11px] font-bold uppercase text-muted-foreground">Hari Puncak</span>
                             <p className="font-mono text-base font-black text-emerald-600 dark:text-emerald-400">
-                                {peakMetric ? `${peakMetric.label} (${chartMode === 'revenue' ? formatCurrency(peakMetric.revenue) : `${peakMetric.tickets} tiket`})` : '-'}
+                                {peakMetric
+                                    ? `${peakMetric.label} (${chartMode === 'revenue' ? formatCurrency(peakMetric.revenue) : `${peakMetric.tickets} tiket`})`
+                                    : '-'}
                             </p>
                         </div>
                         <div>
@@ -678,6 +475,13 @@ export default function Dashboard({
 
                     {/* SVG Chart Area */}
                     <div className="relative mt-6 w-full select-none overflow-x-auto">
+                        {!hasAnySalesActivity && (
+                            <div className="mb-3 flex items-center justify-center gap-2 rounded-md border border-dashed border-foreground/30 bg-muted/40 py-2 text-xs text-muted-foreground">
+                                <Clock className="size-3.5" />
+                                <span>Belum ada transaksi penjualan pada periode 14 hari terakhir</span>
+                            </div>
+                        )}
+
                         <div className="min-w-[620px]">
                             <svg
                                 viewBox={`0 0 ${chartWidth} ${chartHeight}`}
@@ -955,7 +759,7 @@ export default function Dashboard({
                             <div className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                                 {categories.length === 0 ? (
                                     <div className="col-span-2 py-6 text-center text-xs text-muted-foreground">
-                                        Belum ada kategori yang ditambahkan.
+                                        Belum ada kategori event yang ditambahkan.
                                     </div>
                                 ) : (
                                     categories.map((cat, i) => (
