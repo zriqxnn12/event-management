@@ -19,9 +19,6 @@ use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
-/** Platform fee applied to every paid order (3%). */
-const PLATFORM_FEE_RATE = 0.03;
-
 class OrderController extends Controller
 {
     /** Platform fee rate applied to every paid order (3%). */
@@ -43,15 +40,24 @@ class OrderController extends Controller
         $eventId = $request->query('event_id');
         $search = $request->query('search');
 
-        $query = Order::with(['event:id,title,slug,user_id', 'ticket:id,name', 'user:id,name,email'])
+        $baseScope = Order::query()
             ->when(! $isAdmin, fn ($q) => $q->whereHas('event', fn ($eq) => $eq->where('user_id', $user->id)))
-            ->when($paymentStatus !== 'all', fn ($q) => $q->where('payment_status', $paymentStatus))
             ->when($eventId, fn ($q) => $q->where('event_id', (int) $eventId))
             ->when($search, fn ($q) => $q->where(fn ($sq) => $sq
                 ->where('number', 'like', "%{$search}%")
                 ->orWhere('attendee_name', 'like', "%{$search}%")
                 ->orWhere('attendee_email', 'like', "%{$search}%")
-            ))
+            ));
+
+        $totalOrders = (clone $baseScope)->count();
+        $paidOrdersQuery = (clone $baseScope)->where('payment_status', 'paid');
+        $totalPaidOrders = (clone $paidOrdersQuery)->count();
+        $totalRevenue = (float) (clone $paidOrdersQuery)->sum('total_price');
+        $totalFee = $isAdmin ? (float) bcmul((string) $totalRevenue, (string) self::PLATFORM_FEE_RATE, 2) : null;
+
+        $query = (clone $baseScope)
+            ->with(['event:id,title,slug,user_id', 'ticket:id,name', 'user:id,name,email'])
+            ->when($paymentStatus !== 'all', fn ($q) => $q->where('payment_status', $paymentStatus))
             ->latest();
 
         $orders = $query->paginate(15)->withQueryString();
@@ -98,6 +104,12 @@ class OrderController extends Controller
             'eventOptions' => $eventOptions->map(fn ($e) => ['id' => $e->id, 'title' => $e->title]),
             'isAdmin' => $isAdmin,
             'feeRate' => self::PLATFORM_FEE_RATE,
+            'stats' => [
+                'total_revenue' => $totalRevenue,
+                'total_orders' => $totalOrders,
+                'total_paid_orders' => $totalPaidOrders,
+                'total_fee' => $totalFee,
+            ],
         ]);
     }
 

@@ -1,4 +1,4 @@
-import { Head, Link, router, setLayoutProps, usePage } from '@inertiajs/react';
+import { Head, Link, router, setLayoutProps } from '@inertiajs/react';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,11 +12,16 @@ import {
 } from '@/components/ui/select';
 import {
     CalendarDays,
+    CheckCircle2,
+    Coins,
     CreditCard,
     ExternalLink,
+    Filter,
     Receipt,
+    RotateCcw,
     Search,
     ShoppingCart,
+    TrendingUp,
     X,
 } from 'lucide-react';
 import { index as ordersIndex } from '@/actions/App/Http/Controllers/OrderController';
@@ -29,7 +34,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 const PAYMENT_STATUS_TABS = [
-    { key: 'all', label: 'Semua' },
+    { key: 'all', label: 'Semua Status' },
     { key: 'paid', label: 'Lunas' },
     { key: 'pending', label: 'Menunggu' },
     { key: 'expired', label: 'Kadaluarsa' },
@@ -66,24 +71,39 @@ function formatCurrency(value: number): string {
     return 'Rp ' + value.toLocaleString('id-ID', { minimumFractionDigits: 0 });
 }
 
-function EmptyState() {
+function EmptyState({ onReset }: { onReset: () => void }) {
     return (
-        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-foreground/30 py-20 text-center">
-            <div className="mb-4 flex size-16 items-center justify-center border-2 border-foreground/20 bg-muted/40">
-                <ShoppingCart className="size-8 text-foreground/30" />
+        <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-foreground/30 bg-muted/20 py-16 text-center">
+            <div className="mb-4 flex size-14 items-center justify-center rounded-xl border-2 border-foreground/20 bg-muted/60">
+                <ShoppingCart className="size-7 text-foreground/40" />
             </div>
-            <h3 className="mb-2 text-lg font-black">Belum ada order</h3>
-            <p className="max-w-sm text-sm text-muted-foreground">
-                Tidak ada order yang cocok dengan filter yang dipilih.
+            <h3 className="mb-1 text-lg font-black">Belum ada data order</h3>
+            <p className="mb-4 max-w-sm text-sm text-muted-foreground">
+                Tidak ada order yang cocok dengan filter atau kata kunci pencarian yang sedang dipilih.
             </p>
+            <Button
+                variant="outline"
+                size="sm"
+                onClick={onReset}
+                className="border-2 border-foreground font-bold shadow-2xs"
+            >
+                <RotateCcw className="mr-1.5 size-3.5" />
+                Reset Semua Filter
+            </Button>
         </div>
     );
 }
 
-export default function OrdersIndex({ orders, filters, eventOptions, isAdmin, feeRate }: Props) {
+export default function OrdersIndex({ orders, filters, eventOptions, isAdmin, feeRate, stats }: Props) {
     setLayoutProps({ breadcrumbs });
 
     const [search, setSearch] = useState(filters.search ?? '');
+
+    const hasActiveFilters = Boolean(
+        (filters.payment_status && filters.payment_status !== 'all') ||
+        filters.event_id ||
+        filters.search
+    );
 
     const applyFilters = (overrides: Partial<typeof filters>) => {
         const params: Record<string, string | number | undefined> = {
@@ -121,93 +141,229 @@ export default function OrdersIndex({ orders, filters, eventOptions, isAdmin, fe
         applyFilters({ search: '' });
     };
 
+    const handleResetAllFilters = () => {
+        setSearch('');
+        router.get(ordersIndex().url, {}, { preserveState: true, replace: true });
+    };
+
+    const paidRate = stats.total_orders > 0
+        ? Math.round((stats.total_paid_orders / stats.total_orders) * 100)
+        : 0;
+
     return (
         <>
             <Head title="Manajemen Order" />
 
-            <div className="flex flex-col gap-6 p-4 sm:p-6">
+            <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
                 {/* Header */}
-                <div>
+                <div className="flex flex-col gap-1">
                     <h1 className="text-2xl font-black tracking-tight sm:text-3xl">
-                        {isAdmin ? 'Semua Order' : 'Order Saya'}
+                        {isAdmin ? 'Semua Order Platform' : 'Manajemen Order'}
                     </h1>
-                    <p className="mt-1 text-sm text-muted-foreground">
+                    <p className="text-sm font-medium text-muted-foreground">
                         {isAdmin
-                            ? `Seluruh data transaksi platform (fee ${(feeRate * 100).toFixed(0)}% per transaksi berbayar) · ${orders.total} total`
-                            : `Order dari event yang Anda selenggarakan · ${orders.total} total`}
+                            ? `Kelola semua transaksi order platform beserta komisi fee ${(feeRate * 100).toFixed(0)}% per transaksi lunas.`
+                            : 'Pantau status pembayaran dan riwayat pemesanan tiket untuk event Anda.'}
                     </p>
                 </div>
 
-                {/* Filter bar */}
-                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-                    {/* Search */}
-                    <form onSubmit={handleSearchSubmit} className="relative flex-1 sm:max-w-xs">
-                        <Search className="absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            placeholder="Cari no. order, nama, email…"
-                            className="border-2 border-foreground/40 pl-8 pr-8 text-sm font-medium focus-visible:border-foreground"
-                        />
-                        {search && (
-                            <button
-                                type="button"
-                                onClick={handleClearSearch}
-                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                                aria-label="Hapus pencarian"
-                            >
-                                <X className="size-3.5" />
-                            </button>
-                        )}
-                    </form>
+                {/* Summary Metric Cards */}
+                <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2 ${isAdmin ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}>
+                    {/* Card 1: Total Pendapatan */}
+                    <div className="group relative flex flex-col justify-between overflow-hidden rounded-xl border-2 border-foreground bg-card p-5 shadow-[4px_4px_0px_0px_#000] transition-all hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff]">
+                        <div className="flex items-start justify-between">
+                            <span className="text-xs font-black uppercase tracking-wider text-muted-foreground">
+                                Total Pendapatan
+                            </span>
+                            <div className="flex size-10 items-center justify-center rounded-lg border-2 border-foreground bg-emerald-200 text-emerald-950 shadow-[2px_2px_0px_0px_#000] dark:bg-emerald-900/60 dark:text-emerald-200">
+                                <CreditCard className="size-5" />
+                            </div>
+                        </div>
+                        <div className="mt-3">
+                            <p className="text-2xl font-black tracking-tight text-foreground lg:text-3xl">
+                                {formatCurrency(stats.total_revenue)}
+                            </p>
+                            <div className="mt-2 flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                                <TrendingUp className="size-3.5" />
+                                <span>Dari pesanan yang telah lunas</span>
+                            </div>
+                        </div>
+                    </div>
 
-                    {/* Event filter */}
-                    <Select
-                        value={filters.event_id ? String(filters.event_id) : 'all'}
-                        onValueChange={(val) =>
-                            applyFilters({ event_id: val === 'all' ? null : Number(val) })
-                        }
-                    >
-                        <SelectTrigger className="w-full border-2 border-foreground/40 text-sm font-semibold sm:w-56">
-                            <CalendarDays className="mr-1.5 size-3.5 shrink-0 text-muted-foreground" />
-                            <SelectValue placeholder="Filter Event" />
-                        </SelectTrigger>
-                        <SelectContent className="border-2 border-foreground">
-                            <SelectItem value="all" className="font-semibold">
-                                Semua Event
-                            </SelectItem>
-                            {eventOptions.map((e) => (
-                                <SelectItem key={e.id} value={String(e.id)} className="font-semibold">
-                                    {e.title}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    {/* Card 2: Total Order */}
+                    <div className="group relative flex flex-col justify-between overflow-hidden rounded-xl border-2 border-foreground bg-card p-5 shadow-[4px_4px_0px_0px_#000] transition-all hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff]">
+                        <div className="flex items-start justify-between">
+                            <span className="text-xs font-black uppercase tracking-wider text-muted-foreground">
+                                Total Order
+                            </span>
+                            <div className="flex size-10 items-center justify-center rounded-lg border-2 border-foreground bg-blue-200 text-blue-950 shadow-[2px_2px_0px_0px_#000] dark:bg-blue-900/60 dark:text-blue-200">
+                                <ShoppingCart className="size-5" />
+                            </div>
+                        </div>
+                        <div className="mt-3">
+                            <p className="text-2xl font-black tracking-tight text-foreground lg:text-3xl">
+                                {stats.total_orders.toLocaleString('id-ID')}
+                                <span className="ml-1.5 text-sm font-semibold text-muted-foreground">transaksi</span>
+                            </p>
+                            <p className="mt-2 text-xs font-semibold text-muted-foreground">
+                                Seluruh status pesanan tercatat
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Card 3: Order Lunas */}
+                    <div className="group relative flex flex-col justify-between overflow-hidden rounded-xl border-2 border-foreground bg-card p-5 shadow-[4px_4px_0px_0px_#000] transition-all hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff]">
+                        <div className="flex items-start justify-between">
+                            <span className="text-xs font-black uppercase tracking-wider text-muted-foreground">
+                                Order Lunas
+                            </span>
+                            <div className="flex size-10 items-center justify-center rounded-lg border-2 border-foreground bg-amber-200 text-amber-950 shadow-[2px_2px_0px_0px_#000] dark:bg-amber-900/60 dark:text-amber-200">
+                                <CheckCircle2 className="size-5" />
+                            </div>
+                        </div>
+                        <div className="mt-3">
+                            <div className="flex items-baseline justify-between">
+                                <p className="text-2xl font-black tracking-tight text-foreground lg:text-3xl">
+                                    {stats.total_paid_orders.toLocaleString('id-ID')}
+                                    <span className="ml-1.5 text-sm font-semibold text-muted-foreground">lunas</span>
+                                </p>
+                                <span className="font-mono text-xs font-bold text-muted-foreground">
+                                    {paidRate}% rasio
+                                </span>
+                            </div>
+                            <p className="mt-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                                Pembayaran berhasil terverifikasi
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Card 4: Total Fee Platform (Role Admin Only) */}
+                    {isAdmin && (
+                        <div className="group relative flex flex-col justify-between overflow-hidden rounded-xl border-2 border-foreground bg-card p-5 shadow-[4px_4px_0px_0px_#000] transition-all hover:-translate-y-0.5 hover:shadow-[5px_5px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff]">
+                            <div className="flex items-start justify-between">
+                                <span className="text-xs font-black uppercase tracking-wider text-muted-foreground">
+                                    Total Fee (3%)
+                                </span>
+                                <div className="flex size-10 items-center justify-center rounded-lg border-2 border-foreground bg-violet-200 text-violet-950 shadow-[2px_2px_0px_0px_#000] dark:bg-violet-900/60 dark:text-violet-200">
+                                    <Coins className="size-5" />
+                                </div>
+                            </div>
+                            <div className="mt-3">
+                                <p className="text-2xl font-black tracking-tight text-foreground lg:text-3xl">
+                                    {formatCurrency(stats.total_fee ?? 0)}
+                                </p>
+                                <div className="mt-2 flex items-center gap-1.5 text-xs font-bold text-violet-600 dark:text-violet-400">
+                                    <span>Komisi pendapatan platform</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
-                {/* Status tabs */}
-                <div className="flex flex-wrap gap-2">
-                    {PAYMENT_STATUS_TABS.map((tab) => (
-                        <button
-                            key={tab.key}
-                            onClick={() => applyFilters({ payment_status: tab.key })}
-                            className={`rounded-none border-2 px-3 py-1.5 text-xs font-bold transition-all ${
-                                (filters.payment_status ?? 'all') === tab.key
-                                    ? 'border-foreground bg-foreground text-background'
-                                    : 'border-foreground/30 text-muted-foreground hover:border-foreground hover:text-foreground'
-                            }`}
-                        >
-                            {tab.label}
-                        </button>
-                    ))}
+                {/* Filter & Search Section wrapped in a Card */}
+                <div className="rounded-xl border-2 border-foreground bg-card p-4 sm:p-5 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff]">
+                    <div className="flex flex-col gap-4">
+                        {/* Top bar: Search input + Event Select + Reset button */}
+                        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                            <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+                                {/* Search */}
+                                <form onSubmit={handleSearchSubmit} className="relative flex-1 sm:max-w-md">
+                                    <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                                    <Input
+                                        value={search}
+                                        onChange={(e) => setSearch(e.target.value)}
+                                        placeholder="Cari no. order, nama peserta, email…"
+                                        className="h-10 border-2 border-foreground/40 pl-9 pr-9 text-sm font-semibold focus-visible:border-foreground"
+                                    />
+                                    {search && (
+                                        <button
+                                            type="button"
+                                            onClick={handleClearSearch}
+                                            className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground transition-colors hover:text-foreground"
+                                            aria-label="Hapus pencarian"
+                                        >
+                                            <X className="size-3.5" />
+                                        </button>
+                                    )}
+                                </form>
+
+                                {/* Event filter dropdown */}
+                                <Select
+                                    value={filters.event_id ? String(filters.event_id) : 'all'}
+                                    onValueChange={(val) =>
+                                        applyFilters({ event_id: val === 'all' ? null : Number(val) })
+                                    }
+                                >
+                                    <SelectTrigger className="h-10 w-full border-2 border-foreground/40 text-sm font-semibold sm:w-64">
+                                        <CalendarDays className="mr-2 size-4 shrink-0 text-muted-foreground" />
+                                        <SelectValue placeholder="Semua Event" />
+                                    </SelectTrigger>
+                                    <SelectContent className="max-h-72 border-2 border-foreground">
+                                        <SelectItem value="all" className="font-semibold">
+                                            Semua Event ({eventOptions.length})
+                                        </SelectItem>
+                                        {eventOptions.map((e) => (
+                                            <SelectItem key={e.id} value={String(e.id)} className="font-semibold">
+                                                {e.title}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {/* Reset button if any filter is active */}
+                            {hasActiveFilters && (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleResetAllFilters}
+                                    className="self-start border-2 border-foreground text-xs font-bold shadow-2xs hover:bg-muted md:self-auto"
+                                >
+                                    <RotateCcw className="mr-1.5 size-3.5" />
+                                    Reset Filter
+                                </Button>
+                            )}
+                        </div>
+
+                        {/* Divider */}
+                        <div className="h-0.5 w-full bg-border" />
+
+                        {/* Bottom bar: Status tabs filter */}
+                        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                                <Filter className="size-3.5" />
+                                <span>Status Pembayaran:</span>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                                {PAYMENT_STATUS_TABS.map((tab) => {
+                                    const isActive = (filters.payment_status ?? 'all') === tab.key;
+                                    return (
+                                        <button
+                                            key={tab.key}
+                                            type="button"
+                                            onClick={() => applyFilters({ payment_status: tab.key })}
+                                            className={`rounded-md border-2 px-3 py-1.5 text-xs font-bold transition-all ${
+                                                isActive
+                                                    ? 'border-foreground bg-foreground text-background shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#fff]'
+                                                    : 'border-foreground/30 bg-background text-muted-foreground hover:border-foreground hover:text-foreground'
+                                            }`}
+                                        >
+                                            {tab.label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                {/* Table */}
+                {/* Table or Empty State */}
                 {orders.data.length === 0 ? (
-                    <EmptyState />
+                    <EmptyState onReset={handleResetAllFilters} />
                 ) : (
                     <>
-                        <div className="overflow-hidden rounded-lg border-2 border-foreground bg-background shadow-xs">
+                        <div className="overflow-hidden rounded-xl border-2 border-foreground bg-background shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff]">
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left text-sm">
                                     <thead className="border-b-2 border-foreground bg-muted/60 text-xs font-black uppercase tracking-wider text-muted-foreground">
@@ -221,11 +377,11 @@ export default function OrdersIndex({ orders, filters, eventOptions, isAdmin, fe
                                             <th scope="col" className="px-4 py-3.5">
                                                 Event / Tiket
                                             </th>
-                                            <th scope="col" className="px-4 py-3.5">
+                                            <th scope="col" className="px-4 py-3.5 text-right">
                                                 Total
                                             </th>
                                             {isAdmin && (
-                                                <th scope="col" className="px-4 py-3.5">
+                                                <th scope="col" className="px-4 py-3.5 text-right">
                                                     Fee (3%)
                                                 </th>
                                             )}
@@ -297,7 +453,7 @@ export default function OrdersIndex({ orders, filters, eventOptions, isAdmin, fe
                                                     </td>
 
                                                     {/* Total */}
-                                                    <td className="px-4 py-3.5 align-middle">
+                                                    <td className="px-4 py-3.5 align-middle text-right">
                                                         <span className="font-bold">
                                                             {order.total_price <= 0
                                                                 ? 'GRATIS'
@@ -310,7 +466,7 @@ export default function OrdersIndex({ orders, filters, eventOptions, isAdmin, fe
                                                         <td className="px-4 py-3.5 align-middle text-right">
                                                             {order.payment_status === 'paid' && order.total_price > 0 ? (
                                                                 <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                                                                    {order.formatted_fee ?? formatCurrency((order.total_price * feeRate))}
+                                                                    {order.formatted_fee ?? formatCurrency(order.total_price * feeRate)}
                                                                 </span>
                                                             ) : (
                                                                 <span className="text-xs text-muted-foreground">—</span>
@@ -347,10 +503,10 @@ export default function OrdersIndex({ orders, filters, eventOptions, isAdmin, fe
                             </div>
                         </div>
 
-                        {/* Summary row (admin: total fees) */}
+                        {/* Summary row (admin: total fees on current page) */}
                         {isAdmin && (
-                            <div className="flex items-center justify-end gap-2 rounded-lg border-2 border-foreground bg-muted/40 px-4 py-3">
-                                <CreditCard className="size-4 text-muted-foreground" />
+                            <div className="flex items-center justify-end gap-2 rounded-xl border-2 border-foreground bg-card px-4 py-3 shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#fff]">
+                                <Coins className="size-4 text-violet-600 dark:text-violet-400" />
                                 <span className="text-sm font-semibold text-muted-foreground">
                                     Total Fee Halaman Ini:
                                 </span>
@@ -371,7 +527,7 @@ export default function OrdersIndex({ orders, filters, eventOptions, isAdmin, fe
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        className="border-2 border-foreground font-bold"
+                                        className="border-2 border-foreground font-bold shadow-2xs"
                                         onClick={() => router.get(orders.prev_page_url!)}
                                     >
                                         ← Sebelumnya
@@ -384,7 +540,7 @@ export default function OrdersIndex({ orders, filters, eventOptions, isAdmin, fe
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        className="border-2 border-foreground font-bold"
+                                        className="border-2 border-foreground font-bold shadow-2xs"
                                         onClick={() => router.get(orders.next_page_url!)}
                                     >
                                         Selanjutnya →
@@ -398,4 +554,3 @@ export default function OrdersIndex({ orders, filters, eventOptions, isAdmin, fe
         </>
     );
 }
-

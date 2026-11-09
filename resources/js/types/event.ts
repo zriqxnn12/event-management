@@ -298,11 +298,19 @@ export type OrdersFilters = {
     search: string | null;
 };
 
+export type OrdersStats = {
+    total_revenue: number;
+    total_orders: number;
+    total_paid_orders: number;
+    total_fee: number | null;
+};
+
 export type OrdersIndexProps = {
     orders: PaginatedData<OrderRow>;
     filters: OrdersFilters;
     eventOptions: EventOption[];
     isAdmin: boolean;
     feeRate: number;
+    stats: OrdersStats;
 };
 

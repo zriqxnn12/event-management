@@ -25,6 +25,7 @@ import { Badge } from '@/components/ui/badge';
 import { dashboard } from '@/routes';
 import { create as eventsCreate, index as eventsIndex } from '@/actions/App/Http/Controllers/Vendor/EventController';
 import type { BreadcrumbItem, User } from '@/types';
+import { index as ordersIndex } from '@/actions/App/Http/Controllers/OrderController';
 
 export type DashboardStats = {
     total_revenue: number;
@@ -876,7 +877,7 @@ export default function Dashboard({
                                 className="w-full border-2 border-foreground font-bold shadow-[2px_2px_0px_0px_#000]"
                                 asChild
                             >
-                                <Link href={eventsIndex().url}>
+                                <Link href={ordersIndex().url}>
                                     Lihat Semua Event & Penjualan →
                                 </Link>
                             </Button>
