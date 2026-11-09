@@ -11,6 +11,9 @@ Route::inertia('/', 'welcome')->name('home');
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+    // Orders index (admin sees all + fees; vendor sees own orders)
+    Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
+
     // Vendor event management
     Route::prefix('vendor')->name('vendor.')->group(function () {
         Route::match(['put', 'patch', 'post'], 'events/{event}', [EventController::class, 'update'])->name('events.update');

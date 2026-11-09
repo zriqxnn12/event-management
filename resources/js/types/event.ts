@@ -266,3 +266,43 @@ export type EventDetailPageProps = {
     isPreview?: boolean;
 };
 
+// ─── Orders ──────────────────────────────────────────────────────────────────
+
+export type PaymentStatus = 'pending' | 'paid' | 'expired' | 'cancelled';
+
+export type OrderRow = {
+    id: number;
+    number: string;
+    attendee_name: string;
+    attendee_email: string;
+    attendee_phone: string | null;
+    quantity: number;
+    total_price: number;
+    formatted_price: string;
+    /** Only present when the authenticated user is an admin. */
+    platform_fee: number | null;
+    /** Only present when the authenticated user is an admin. */
+    formatted_fee: string | null;
+    payment_status: PaymentStatus;
+    created_at: string;
+    created_at_human: string;
+    event: { id: number; title: string; slug: string } | null;
+    ticket: { id: number; name: string } | null;
+};
+
+export type EventOption = { id: number; title: string };
+
+export type OrdersFilters = {
+    payment_status: string;
+    event_id: number | null;
+    search: string | null;
+};
+
+export type OrdersIndexProps = {
+    orders: PaginatedData<OrderRow>;
+    filters: OrdersFilters;
+    eventOptions: EventOption[];
+    isAdmin: boolean;
+    feeRate: number;
+};
+

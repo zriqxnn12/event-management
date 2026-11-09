@@ -6,6 +6,7 @@ use Akira\QrCode\Facades\QrCode;
 use App\Models\Event;
 use App\Models\EventTicket;
 use App\Models\Order;
+use App\Models\User;
 use App\Services\Midtrans\MidtransService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
@@ -18,8 +19,88 @@ use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
+/** Platform fee applied to every paid order (3%). */
+const PLATFORM_FEE_RATE = 0.03;
+
 class OrderController extends Controller
 {
+    /** Platform fee rate applied to every paid order (3%). */
+    private const PLATFORM_FEE_RATE = 0.03;
+
+    /**
+     * Display a paginated list of orders.
+     *
+     * - Admin: sees all orders with the 3% platform fee per transaction.
+     * - Vendor: sees only orders belonging to their own events.
+     */
+    public function index(Request $request): Response
+    {
+        /** @var User $user */
+        $user = Auth::user();
+        $isAdmin = $user->role === 'admin';
+
+        $paymentStatus = $request->query('payment_status', 'all');
+        $eventId = $request->query('event_id');
+        $search = $request->query('search');
+
+        $query = Order::with(['event:id,title,slug,user_id', 'ticket:id,name', 'user:id,name,email'])
+            ->when(! $isAdmin, fn ($q) => $q->whereHas('event', fn ($eq) => $eq->where('user_id', $user->id)))
+            ->when($paymentStatus !== 'all', fn ($q) => $q->where('payment_status', $paymentStatus))
+            ->when($eventId, fn ($q) => $q->where('event_id', (int) $eventId))
+            ->when($search, fn ($q) => $q->where(fn ($sq) => $sq
+                ->where('number', 'like', "%{$search}%")
+                ->orWhere('attendee_name', 'like', "%{$search}%")
+                ->orWhere('attendee_email', 'like', "%{$search}%")
+            ))
+            ->latest();
+
+        $orders = $query->paginate(15)->withQueryString();
+
+        $feeRate = self::PLATFORM_FEE_RATE;
+
+        $orders->getCollection()->transform(fn ($order) => [
+            'id' => $order->id,
+            'number' => $order->number,
+            'attendee_name' => $order->attendee_name,
+            'attendee_email' => $order->attendee_email,
+            'attendee_phone' => $order->attendee_phone,
+            'quantity' => (int) $order->quantity,
+            'total_price' => (float) $order->total_price,
+            'formatted_price' => 'Rp '.number_format((float) $order->total_price, 0, ',', '.'),
+            'platform_fee' => $isAdmin ? (float) bcmul((string) $order->total_price, (string) $feeRate, 2) : null,
+            'formatted_fee' => $isAdmin ? 'Rp '.number_format((float) bcmul((string) $order->total_price, (string) $feeRate, 2), 0, ',', '.') : null,
+            'payment_status' => $order->payment_status,
+            'created_at' => $order->created_at?->format('d M Y, H:i') ?? '',
+            'created_at_human' => $order->created_at?->diffForHumans() ?? '',
+            'event' => $order->event ? [
+                'id' => $order->event->id,
+                'title' => $order->event->title,
+                'slug' => $order->event->slug,
+            ] : null,
+            'ticket' => $order->ticket ? [
+                'id' => $order->ticket->id,
+                'name' => $order->ticket->name,
+            ] : null,
+        ]);
+
+        // Build the event options list for the filter dropdown
+        $eventOptions = $isAdmin
+            ? Event::orderBy('title')->get(['id', 'title'])
+            : Event::where('user_id', $user->id)->orderBy('title')->get(['id', 'title']);
+
+        return Inertia::render('orders/index', [
+            'orders' => $orders,
+            'filters' => [
+                'payment_status' => $paymentStatus,
+                'event_id' => $eventId ? (int) $eventId : null,
+                'search' => $search,
+            ],
+            'eventOptions' => $eventOptions->map(fn ($e) => ['id' => $e->id, 'title' => $e->title]),
+            'isAdmin' => $isAdmin,
+            'feeRate' => self::PLATFORM_FEE_RATE,
+        ]);
+    }
+
     /**
      * Create a new order and redirect to the payment page.
      */

@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { BookOpen, CalendarDays, FolderGit2, LayoutGrid } from 'lucide-react';
+import { BookOpen, CalendarDays, FolderGit2, LayoutGrid, ShoppingCart } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import { index as vendorEventsIndex } from '@/actions/App/Http/Controllers/Vendor/EventController';
+import { index as ordersIndex } from '@/actions/App/Http/Controllers/OrderController';
 import type { NavItem } from '@/types';
 
 const mainNavItems: NavItem[] = [
@@ -27,6 +28,11 @@ const mainNavItems: NavItem[] = [
         title: 'Event',
         href: vendorEventsIndex().url,
         icon: CalendarDays,
+    },
+    {
+        title: 'Orders',
+        href: ordersIndex().url,
+        icon: ShoppingCart,
     },
 ];
 
