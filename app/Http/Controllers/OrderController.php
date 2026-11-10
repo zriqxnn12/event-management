@@ -7,6 +7,7 @@ use App\Models\Event;
 use App\Models\EventTicket;
 use App\Models\Order;
 use App\Models\User;
+use App\Services\Fonnte\FonnteService;
 use App\Services\Midtrans\MidtransService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
@@ -171,6 +172,12 @@ class OrderController extends Controller
             $midtrans->getSnapToken($order);
         } catch (\Throwable $e) {
             Log::warning('Midtrans Snap token generation failed: '.$e->getMessage());
+        }
+
+        try {
+            app(FonnteService::class)->sendOrderPendingNotification($order);
+        } catch (\Throwable $e) {
+            Log::error('Fonnte sendOrderPendingNotification error: '.$e->getMessage());
         }
 
         return redirect()->route('orders.show', $order);

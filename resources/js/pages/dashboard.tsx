@@ -324,7 +324,7 @@ export default function Dashboard({
                                         </Link>
                                     </Button>
                                 )}
-                                <Button
+                                {/* <Button
                                     variant="outline"
                                     size="sm"
                                     className="border-2 border-foreground font-bold shadow-[2px_2px_0px_0px_#000] hover:-translate-y-0.5 active:translate-y-0"
@@ -334,7 +334,7 @@ export default function Dashboard({
                                         <CalendarDays className="mr-1.5 size-4" />
                                         Kelola Event
                                     </Link>
-                                </Button>
+                                </Button> */}
                                 <Button
                                     size="sm"
                                     className="border-2 border-foreground bg-primary font-bold text-primary-foreground shadow-[3px_3px_0px_0px_#000] hover:-translate-y-0.5 hover:bg-primary/90 active:translate-y-0"

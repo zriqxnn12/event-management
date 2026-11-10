@@ -1006,6 +1006,7 @@ export default function EventDetail({
                                         placeholder="081234567890"
                                         className="border-2 border-foreground font-medium"
                                     />
+                                    <span className="text-[11px] text-muted-foreground">Notifikasi status pemesanan & tiket akan dikirimkan via WhatsApp.</span>
                                 </div>
 
                                 <div className="flex flex-col gap-1.5">

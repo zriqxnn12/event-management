@@ -273,7 +273,7 @@ export default function OrdersIndex({ orders, filters, eventOptions, isAdmin, fe
                                         value={search}
                                         onChange={(e) => setSearch(e.target.value)}
                                         placeholder="Cari no. order, nama peserta, email…"
-                                        className="h-10 border-2 border-foreground/40 pl-9 pr-9 text-sm font-semibold focus-visible:border-foreground"
+                                        className="h-10 border-2 placeholder:text-slate-400 border-foreground/40 pl-9 pr-9 text-sm font-medium focus-visible:border-foreground"
                                     />
                                     {search && (
                                         <button

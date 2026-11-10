@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Services\Fonnte\FonnteService;
 use Database\Factories\OrderFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * @property int $id
@@ -85,6 +87,14 @@ class Order extends Model
 
             if ($this->event_ticket_id) {
                 $this->ticket()?->increment('sold', $this->quantity);
+            }
+        });
+
+        DB::afterCommit(function () {
+            try {
+                app(FonnteService::class)->sendOrderPaidNotification($this);
+            } catch (\Throwable $e) {
+                Log::error('Fonnte sendOrderPaidNotification error: '.$e->getMessage());
             }
         });
     }
