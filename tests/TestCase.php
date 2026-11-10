@@ -12,6 +12,10 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
 
+        if (config('database.default') !== 'sqlite' || config('database.connections.sqlite.database') !== ':memory:') {
+            throw new \RuntimeException('DATABASE PROTECTION: Tests are prevented from running against non-memory database to protect application data.');
+        }
+
         $this->withoutMiddleware(PreventRequestForgery::class);
     }
 
