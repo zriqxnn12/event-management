@@ -6,26 +6,26 @@ import {
     TrendingUp,
     Users,
     CreditCard,
+    Coins,
     Plus,
     ExternalLink,
     Activity,
-    CheckCircle2,
     Clock,
-    AlertCircle,
     MapPin,
     Monitor,
     Globe,
     ChevronRight,
     ShoppingBag,
-    BarChart3,
     ArrowUpRight,
+    ShieldCheck,
+    Store,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { dashboard } from '@/routes';
 import { create as eventsCreate, index as eventsIndex } from '@/actions/App/Http/Controllers/Vendor/EventController';
-import type { BreadcrumbItem, User } from '@/types';
 import { index as ordersIndex } from '@/actions/App/Http/Controllers/OrderController';
+import type { BreadcrumbItem, User } from '@/types';
 
 export type DashboardStats = {
     total_revenue: number;
@@ -36,6 +36,8 @@ export type DashboardStats = {
     completed_events: number;
     total_attendees: number;
     total_quota: number;
+    platform_fee?: number | null;
+    total_vendors?: number | null;
 };
 
 export type SalesTrendItem = {
@@ -65,9 +67,11 @@ export type RecentOrder = {
     attendee_email: string;
     event_title: string;
     event_slug: string;
+    vendor_name?: string | null;
     ticket_name: string;
     quantity: number;
     total_price: number;
+    platform_fee?: number | null;
     payment_status: 'paid' | 'pending' | 'expired' | 'cancelled';
     created_at_human: string;
     created_at: string;
@@ -80,6 +84,7 @@ export type UpcomingEventItem = {
     category: string;
     type: 'online' | 'offline' | 'hybrid';
     status: 'draft' | 'published' | 'cancelled' | 'completed';
+    vendor_name?: string | null;
     start_date: string;
     cover_image: string | null;
     tickets_sold: number;
@@ -87,6 +92,8 @@ export type UpcomingEventItem = {
 };
 
 export type DashboardProps = {
+    isAdmin?: boolean;
+    feeRate?: number;
     stats?: DashboardStats;
     sales_trend?: SalesTrendItem[];
     categories?: CategoryStat[];
@@ -104,6 +111,8 @@ const DEFAULT_STATS: DashboardStats = {
     completed_events: 0,
     total_attendees: 0,
     total_quota: 0,
+    platform_fee: null,
+    total_vendors: null,
 };
 
 const DEFAULT_TYPES: EventTypeBreakdown = {
@@ -125,6 +134,8 @@ function formatNumber(val: number): string {
 }
 
 export default function Dashboard({
+    isAdmin = false,
+    feeRate = 0.03,
     stats: rawStats,
     sales_trend: rawSalesTrend,
     categories: rawCategories,
@@ -235,7 +246,7 @@ export default function Dashboard({
 
     return (
         <>
-            <Head title="Vendor Dashboard" />
+            <Head title={isAdmin ? 'Admin Dashboard' : 'Vendor Dashboard'} />
 
             <div className="flex h-full flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8">
                 {/* Welcome Header */}
@@ -243,63 +254,113 @@ export default function Dashboard({
                     <div className="space-y-1">
                         <div className="flex items-center gap-2">
                             <span className="inline-flex size-2 rounded-full bg-emerald-500 animate-pulse" />
-                            <Badge variant="outline" className="border-2 border-foreground font-mono text-xs uppercase tracking-wider">
-                                Vendor Console
+                            <Badge
+                                variant="outline"
+                                className={`border-2 border-foreground font-mono text-xs uppercase tracking-wider ${
+                                    isAdmin ? 'bg-primary/10 text-primary font-black' : ''
+                                }`}
+                            >
+                                {isAdmin ? 'Admin Platform Console' : 'Vendor Console'}
                             </Badge>
                         </div>
                         <h1 className="text-2xl font-black tracking-tight md:text-3xl">
-                            Halo, {user?.name || 'Partner Vendor'}! 👋
+                            Halo, {user?.name || (isAdmin ? 'Administrator' : 'Partner Vendor')}! 👋
                         </h1>
                         <p className="text-sm font-medium text-muted-foreground">
-                            Pantau metrik penjualan tiket, performa aktivitas event, dan peserta terbaru Anda secara real-time.
+                            {isAdmin
+                                ? `Pantau performa omzet tiket platform, komisi fee platform (${(feeRate * 100).toFixed(0)}%), total event, dan seluruh transaksi peserta secara real-time.`
+                                : 'Pantau metrik penjualan tiket, performa aktivitas event, dan peserta terbaru Anda secara real-time.'}
                         </p>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2.5">
-                        {user?.username && (
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="border-2 border-foreground font-bold shadow-[2px_2px_0px_0px_#000] hover:-translate-y-0.5 active:translate-y-0"
-                                asChild
-                            >
-                                <Link href={`/${user.username}`} target="_blank">
-                                    <ExternalLink className="mr-1.5 size-4" />
-                                    Profil Publik
-                                </Link>
-                            </Button>
+                        {isAdmin ? (
+                            <>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="border-2 border-foreground font-bold shadow-[2px_2px_0px_0px_#000] hover:-translate-y-0.5 active:translate-y-0"
+                                    asChild
+                                >
+                                    <Link href={ordersIndex().url}>
+                                        <ShoppingBag className="mr-1.5 size-4" />
+                                        Semua Orders
+                                    </Link>
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="border-2 border-foreground font-bold shadow-[2px_2px_0px_0px_#000] hover:-translate-y-0.5 active:translate-y-0"
+                                    asChild
+                                >
+                                    <Link href={eventsIndex().url}>
+                                        <CalendarDays className="mr-1.5 size-4" />
+                                        Semua Event
+                                    </Link>
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    className="border-2 border-foreground bg-primary font-bold text-primary-foreground shadow-[3px_3px_0px_0px_#000] hover:-translate-y-0.5 hover:bg-primary/90 active:translate-y-0"
+                                    asChild
+                                >
+                                    <Link href={eventsCreate().url}>
+                                        <Plus className="mr-1.5 size-4 stroke-[3]" />
+                                        Buat Event
+                                    </Link>
+                                </Button>
+                            </>
+                        ) : (
+                            <>
+                                {user?.username && (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="border-2 border-foreground font-bold shadow-[2px_2px_0px_0px_#000] hover:-translate-y-0.5 active:translate-y-0"
+                                        asChild
+                                    >
+                                        <Link href={`/${user.username}`} target="_blank">
+                                            <ExternalLink className="mr-1.5 size-4" />
+                                            Profil Publik
+                                        </Link>
+                                    </Button>
+                                )}
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="border-2 border-foreground font-bold shadow-[2px_2px_0px_0px_#000] hover:-translate-y-0.5 active:translate-y-0"
+                                    asChild
+                                >
+                                    <Link href={eventsIndex().url}>
+                                        <CalendarDays className="mr-1.5 size-4" />
+                                        Kelola Event
+                                    </Link>
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    className="border-2 border-foreground bg-primary font-bold text-primary-foreground shadow-[3px_3px_0px_0px_#000] hover:-translate-y-0.5 hover:bg-primary/90 active:translate-y-0"
+                                    asChild
+                                >
+                                    <Link href={eventsCreate().url}>
+                                        <Plus className="mr-1.5 size-4 stroke-[3]" />
+                                        Buat Event Baru
+                                    </Link>
+                                </Button>
+                            </>
                         )}
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="border-2 border-foreground font-bold shadow-[2px_2px_0px_0px_#000] hover:-translate-y-0.5 active:translate-y-0"
-                            asChild
-                        >
-                            <Link href={eventsIndex().url}>
-                                <CalendarDays className="mr-1.5 size-4" />
-                                Kelola Event
-                            </Link>
-                        </Button>
-                        <Button
-                            size="sm"
-                            className="border-2 border-foreground bg-primary font-bold text-primary-foreground shadow-[3px_3px_0px_0px_#000] hover:-translate-y-0.5 hover:bg-primary/90 active:translate-y-0"
-                            asChild
-                        >
-                            <Link href={eventsCreate().url}>
-                                <Plus className="mr-1.5 size-4 stroke-[3]" />
-                                Buat Event Baru
-                            </Link>
-                        </Button>
                     </div>
                 </div>
 
-                {/* 4 Summary Metric Cards */}
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    {/* Card 1: Total Revenue */}
+                {/* Summary Metric Cards */}
+                <div
+                    className={`grid grid-cols-1 gap-4 sm:grid-cols-2 ${
+                        isAdmin ? 'lg:grid-cols-3 xl:grid-cols-5' : 'lg:grid-cols-4'
+                    }`}
+                >
+                    {/* Card 1: Total Revenue / Omzet */}
                     <div className="group relative flex flex-col justify-between overflow-hidden rounded-xl border-2 border-foreground bg-card p-5 shadow-[4px_4px_0px_0px_#000] transition-all hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff]">
                         <div className="flex items-start justify-between">
                             <span className="text-xs font-black uppercase tracking-wider text-muted-foreground">
-                                Total Pendapatan
+                                {isAdmin ? 'Total Omzet Platform' : 'Total Pendapatan'}
                             </span>
                             <div className="flex size-10 items-center justify-center rounded-lg border-2 border-foreground bg-emerald-200 text-emerald-950 shadow-[2px_2px_0px_0px_#000]">
                                 <CreditCard className="size-5" />
@@ -311,12 +372,35 @@ export default function Dashboard({
                             </p>
                             <div className="mt-2 flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
                                 <TrendingUp className="size-3.5" />
-                                <span>Dari pesanan yang telah lunas</span>
+                                <span>{isAdmin ? 'Seluruh transaksi event lunas' : 'Dari pesanan yang telah lunas'}</span>
                             </div>
                         </div>
                     </div>
 
-                    {/* Card 2: Tickets Sold */}
+                    {/* Card 2: Platform Fee (Admin Only) */}
+                    {isAdmin && (
+                        <div className="group relative flex flex-col justify-between overflow-hidden rounded-xl border-2 border-foreground bg-card p-5 shadow-[4px_4px_0px_0px_#000] transition-all hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff]">
+                            <div className="flex items-start justify-between">
+                                <span className="text-xs font-black uppercase tracking-wider text-muted-foreground">
+                                    Fee Platform ({(feeRate * 100).toFixed(0)}%)
+                                </span>
+                                <div className="flex size-10 items-center justify-center rounded-lg border-2 border-foreground bg-yellow-200 text-yellow-950 shadow-[2px_2px_0px_0px_#000]">
+                                    <Coins className="size-5" />
+                                </div>
+                            </div>
+                            <div className="mt-3">
+                                <p className="text-2xl font-black tracking-tight text-foreground lg:text-3xl">
+                                    {formatCurrency(stats.platform_fee ?? 0)}
+                                </p>
+                                <div className="mt-2 flex items-center gap-1.5 text-xs font-bold text-amber-600 dark:text-amber-400">
+                                    <ShieldCheck className="size-3.5" />
+                                    <span>Pendapatan bersih platform</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Card 3: Tickets Sold */}
                     <div className="group relative flex flex-col justify-between overflow-hidden rounded-xl border-2 border-foreground bg-card p-5 shadow-[4px_4px_0px_0px_#000] transition-all hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff]">
                         <div className="flex items-start justify-between">
                             <span className="text-xs font-black uppercase tracking-wider text-muted-foreground">
@@ -343,43 +427,55 @@ export default function Dashboard({
                                 />
                             </div>
                             <p className="mt-1 text-[11px] font-medium text-muted-foreground">
-                                {stats.total_quota > 0 ? `Target ${formatNumber(stats.total_quota)} total kuota tiket` : 'Kapasitas tiket tidak terbatas'}
+                                {stats.total_quota > 0
+                                    ? `Target ${formatNumber(stats.total_quota)} total kuota tiket`
+                                    : 'Kapasitas tiket tidak terbatas'}
                             </p>
                         </div>
                     </div>
 
-                    {/* Card 3: Active Events */}
+                    {/* Card 4: Events (and Vendors for Admin) */}
                     <div className="group relative flex flex-col justify-between overflow-hidden rounded-xl border-2 border-foreground bg-card p-5 shadow-[4px_4px_0px_0px_#000] transition-all hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff]">
                         <div className="flex items-start justify-between">
                             <span className="text-xs font-black uppercase tracking-wider text-muted-foreground">
-                                Event Aktif
+                                {isAdmin ? 'Total Event & Vendor' : 'Event Aktif'}
                             </span>
                             <div className="flex size-10 items-center justify-center rounded-lg border-2 border-foreground bg-blue-200 text-blue-950 shadow-[2px_2px_0px_0px_#000]">
-                                <CalendarDays className="size-5" />
+                                {isAdmin ? <Store className="size-5" /> : <CalendarDays className="size-5" />}
                             </div>
                         </div>
                         <div className="mt-3">
                             <p className="text-2xl font-black tracking-tight text-foreground lg:text-3xl">
-                                {stats.published_events}
+                                {isAdmin ? stats.total_events : stats.published_events}
                                 <span className="ml-1.5 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
-                                    Dipublish
+                                    {isAdmin ? 'Event' : 'Dipublish'}
                                 </span>
                             </p>
                             <div className="mt-2 flex items-center gap-2 text-xs font-semibold text-muted-foreground">
-                                <span>{stats.draft_events} Draft</span>
-                                <span>•</span>
-                                <span>{stats.completed_events} Selesai</span>
-                                <span>•</span>
-                                <span className="font-bold">{stats.total_events} Total</span>
+                                {isAdmin ? (
+                                    <>
+                                        <span>{stats.published_events} Aktif</span>
+                                        <span>•</span>
+                                        <span>{stats.total_vendors ?? 0} Vendor Mitra</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span>{stats.draft_events} Draft</span>
+                                        <span>•</span>
+                                        <span>{stats.completed_events} Selesai</span>
+                                        <span>•</span>
+                                        <span className="font-bold">{stats.total_events} Total</span>
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>
 
-                    {/* Card 4: Total Attendees */}
+                    {/* Card 5: Total Attendees */}
                     <div className="group relative flex flex-col justify-between overflow-hidden rounded-xl border-2 border-foreground bg-card p-5 shadow-[4px_4px_0px_0px_#000] transition-all hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff]">
                         <div className="flex items-start justify-between">
                             <span className="text-xs font-black uppercase tracking-wider text-muted-foreground">
-                                Total Peserta
+                                {isAdmin ? 'Total Peserta Platform' : 'Total Peserta'}
                             </span>
                             <div className="flex size-10 items-center justify-center rounded-lg border-2 border-foreground bg-purple-200 text-purple-950 shadow-[2px_2px_0px_0px_#000]">
                                 <Users className="size-5" />
@@ -391,7 +487,7 @@ export default function Dashboard({
                                 <span className="ml-1 text-sm font-normal text-muted-foreground">orang</span>
                             </p>
                             <p className="mt-2 text-xs font-medium text-muted-foreground">
-                                Terdaftar di semua event Anda
+                                {isAdmin ? 'Peserta terdaftar di seluruh event' : 'Terdaftar di semua event Anda'}
                             </p>
                         </div>
                     </div>
@@ -403,13 +499,17 @@ export default function Dashboard({
                         <div>
                             <div className="flex items-center gap-2">
                                 <Activity className="size-5 text-primary" />
-                                <h2 className="text-lg font-black tracking-tight">Grafik Aktivitas Penjualan</h2>
+                                <h2 className="text-lg font-black tracking-tight">
+                                    {isAdmin ? 'Grafik Aktivitas Penjualan Seluruh Platform' : 'Grafik Aktivitas Penjualan'}
+                                </h2>
                                 <Badge variant="outline" className="border-2 border-foreground font-mono text-[10px]">
                                     14 Hari Terakhir
                                 </Badge>
                             </div>
                             <p className="text-xs font-medium text-muted-foreground">
-                                Analisis tren pendapatan dan jumlah tiket yang dibeli peserta
+                                {isAdmin
+                                    ? 'Analisis tren omzet bruto dan jumlah tiket yang dibeli di seluruh platform'
+                                    : 'Analisis tren pendapatan dan jumlah tiket yang dibeli peserta'}
                             </p>
                         </div>
 
@@ -425,7 +525,7 @@ export default function Dashboard({
                                             : 'text-foreground hover:bg-muted'
                                     }`}
                                 >
-                                    Pendapatan (Rp)
+                                    {isAdmin ? 'Omzet Platform (Rp)' : 'Pendapatan (Rp)'}
                                 </button>
                                 <button
                                     type="button"
@@ -670,13 +770,13 @@ export default function Dashboard({
                     <div className="flex flex-col justify-between rounded-xl border-2 border-foreground bg-card p-5 shadow-[4px_4px_0px_0px_#000] dark:shadow-[4px_4px_0px_0px_#fff]">
                         <div>
                             <div className="flex items-center justify-between border-b-2 border-foreground/15 pb-3">
-                                <h3 className="font-black text-foreground">Tipe Event</h3>
+                                <h3 className="font-black text-foreground">Tipe Format Event</h3>
                                 <Badge variant="outline" className="border-2 border-foreground font-mono text-[10px]">
                                     Format
                                 </Badge>
                             </div>
                             <p className="mt-2 text-xs text-muted-foreground">
-                                Ragam format event yang diselenggarakan
+                                {isAdmin ? 'Format seluruh event di platform' : 'Ragam format event yang diselenggarakan'}
                             </p>
 
                             <div className="mt-5 space-y-3">
@@ -754,7 +854,9 @@ export default function Dashboard({
                                 </Badge>
                             </div>
                             <p className="mt-2 text-xs text-muted-foreground">
-                                Sebaran topik dan kategori event yang diminati audiens Anda
+                                {isAdmin
+                                    ? 'Sebaran kategori event aktif di seluruh platform'
+                                    : 'Sebaran topik dan kategori event yang diminati audiens Anda'}
                             </p>
 
                             <div className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
@@ -786,12 +888,14 @@ export default function Dashboard({
                         </div>
 
                         <div className="mt-5 flex items-center justify-between border-t-2 border-foreground/15 pt-3 text-xs">
-                            <span className="font-medium text-muted-foreground">Ingin menjangkau segmen baru?</span>
+                            <span className="font-medium text-muted-foreground">
+                                {isAdmin ? 'Kelola atau pantau event lebih detail?' : 'Ingin menjangkau segmen baru?'}
+                            </span>
                             <Link
-                                href={eventsCreate().url}
+                                href={eventsIndex().url}
                                 className="flex items-center gap-1 font-bold text-primary underline hover:text-primary/80"
                             >
-                                Buat kategori event baru <ArrowUpRight className="size-3.5" />
+                                {isAdmin ? 'Lihat semua event platform' : 'Buat kategori event baru'} <ArrowUpRight className="size-3.5" />
                             </Link>
                         </div>
                     </div>
@@ -805,14 +909,18 @@ export default function Dashboard({
                             <div className="flex items-center justify-between border-b-2 border-foreground/15 pb-3">
                                 <div className="flex items-center gap-2">
                                     <ShoppingBag className="size-5 text-emerald-600 dark:text-emerald-400" />
-                                    <h3 className="font-black text-foreground">Pesanan & Transaksi Terbaru</h3>
+                                    <h3 className="font-black text-foreground">
+                                        {isAdmin ? 'Semua Pesanan & Transaksi Platform' : 'Pesanan & Transaksi Terbaru'}
+                                    </h3>
                                 </div>
                                 <Badge variant="outline" className="border-2 border-foreground font-mono text-[10px]">
                                     Live Log
                                 </Badge>
                             </div>
                             <p className="mt-2 text-xs text-muted-foreground">
-                                Aktivitas pemesanan tiket terkini oleh calon peserta
+                                {isAdmin
+                                    ? 'Log pemesanan tiket terkini dari semua vendor dan event'
+                                    : 'Aktivitas pemesanan tiket terkini oleh calon peserta'}
                             </p>
 
                             <div className="mt-4 divide-y-2 divide-foreground/10">
@@ -853,6 +961,11 @@ export default function Dashboard({
                                                         <p className="text-[11px] font-medium text-muted-foreground">
                                                             {order.event_title} • <span className="font-semibold text-foreground">{order.ticket_name}</span> ({order.quantity}x)
                                                         </p>
+                                                        {isAdmin && order.vendor_name && (
+                                                            <p className="text-[10px] font-semibold text-primary">
+                                                                Vendor: {order.vendor_name}
+                                                            </p>
+                                                        )}
                                                         <span className="font-mono text-[10px] text-muted-foreground">
                                                             {order.number} • {order.created_at_human}
                                                         </span>
@@ -862,6 +975,11 @@ export default function Dashboard({
                                                     <p className="font-mono text-xs font-black text-foreground">
                                                         {formatCurrency(order.total_price)}
                                                     </p>
+                                                    {isAdmin && typeof order.platform_fee === 'number' && (
+                                                        <p className="font-mono text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                                                            Fee: {formatCurrency(order.platform_fee)}
+                                                        </p>
+                                                    )}
                                                 </div>
                                             </div>
                                         );
@@ -878,7 +996,7 @@ export default function Dashboard({
                                 asChild
                             >
                                 <Link href={ordersIndex().url}>
-                                    Lihat Semua Event & Penjualan →
+                                    {isAdmin ? 'Buka Manajemen Semua Orders Platform →' : 'Lihat Semua Event & Penjualan →'}
                                 </Link>
                             </Button>
                         </div>
@@ -890,14 +1008,18 @@ export default function Dashboard({
                             <div className="flex items-center justify-between border-b-2 border-foreground/15 pb-3">
                                 <div className="flex items-center gap-2">
                                     <CalendarDays className="size-5 text-primary" />
-                                    <h3 className="font-black text-foreground">Event Terkini & Kuota</h3>
+                                    <h3 className="font-black text-foreground">
+                                        {isAdmin ? 'Event Terkini di Platform' : 'Event Terkini & Kuota'}
+                                    </h3>
                                 </div>
                                 <Badge variant="outline" className="border-2 border-foreground font-mono text-[10px]">
                                     Status
                                 </Badge>
                             </div>
                             <p className="mt-2 text-xs text-muted-foreground">
-                                Pantau serapan kuota tiket pada event-event aktif Anda
+                                {isAdmin
+                                    ? 'Pantau serapan tiket dan status event dari para vendor di platform'
+                                    : 'Pantau serapan kuota tiket pada event-event aktif Anda'}
                             </p>
 
                             <div className="mt-4 space-y-3.5">
@@ -908,7 +1030,7 @@ export default function Dashboard({
                                         </div>
                                         <p className="mt-3 text-sm font-bold">Belum ada event</p>
                                         <p className="text-xs text-muted-foreground mb-3">
-                                            Mulai publikasikan event Anda sekarang.
+                                            Mulai publikasikan event sekarang.
                                         </p>
                                         <Button
                                             size="sm"
@@ -932,7 +1054,7 @@ export default function Dashboard({
                                             >
                                                 <div className="flex items-start justify-between gap-2">
                                                     <div>
-                                                        <div className="flex items-center gap-1.5">
+                                                        <div className="flex items-center gap-1.5 flex-wrap">
                                                             <Badge variant="secondary" className="border border-foreground text-[10px] font-bold">
                                                                 {evt.category}
                                                             </Badge>
@@ -944,6 +1066,11 @@ export default function Dashboard({
                                                             >
                                                                 {evt.status === 'published' ? 'Aktif' : evt.status}
                                                             </Badge>
+                                                            {isAdmin && evt.vendor_name && (
+                                                                <span className="text-[10px] font-bold text-muted-foreground">
+                                                                    Oleh: {evt.vendor_name}
+                                                                </span>
+                                                            )}
                                                         </div>
                                                         <h4 className="mt-1 text-xs font-black text-foreground group-hover:text-primary transition-colors">
                                                             {evt.title}
@@ -956,7 +1083,7 @@ export default function Dashboard({
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        className="size-7 p-0 border border-foreground"
+                                                        className="size-7 p-0 border border-foreground shrink-0"
                                                         asChild
                                                     >
                                                         <Link href={eventsIndex().url}>

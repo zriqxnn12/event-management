@@ -21,10 +21,16 @@ class EventController extends Controller
      */
     public function index(Request $request): Response
     {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        $isAdmin = $user->role === 'admin';
+
         $status = $request->query('status', 'all');
 
-        $events = Event::where('user_id', Auth::id())
+        $events = Event::query()
+            ->when(! $isAdmin, fn ($q) => $q->where('user_id', $user->id))
             ->when($status !== 'all', fn ($q) => $q->where('status', $status))
+            ->with(['user:id,name,username'])
             ->withCount(['tickets', 'coupons'])
             ->orderByDesc('created_at')
             ->paginate(12)
@@ -33,6 +39,7 @@ class EventController extends Controller
         return Inertia::render('vendor/events/index', [
             'events' => $events,
             'filters' => ['status' => $status],
+            'isAdmin' => $isAdmin,
         ]);
     }
 

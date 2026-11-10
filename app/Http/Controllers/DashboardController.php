@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Event;
 use App\Models\EventTicket;
 use App\Models\Order;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,34 +14,48 @@ use Inertia\Response;
 
 class DashboardController extends Controller
 {
+    private const PLATFORM_FEE_RATE = 0.03;
+
     /**
-     * Display the vendor dashboard with analytics and activities.
+     * Display the dashboard with analytics and activities.
+     *
+     * - Admin: sees platform-wide metrics (all events, all orders, platform fee, total vendors).
+     * - Vendor: sees metrics scoped strictly to their own events and orders.
      */
     public function index(Request $request): Response
     {
+        /** @var User $user */
         $user = Auth::user();
-        $vendorEvents = Event::where('user_id', $user->id);
-        $vendorEventIds = (clone $vendorEvents)->pluck('id');
+        $isAdmin = $user->role === 'admin';
+
+        $eventsQuery = Event::query()->when(! $isAdmin, fn ($q) => $q->where('user_id', $user->id));
+        $eventIds = (clone $eventsQuery)->pluck('id');
 
         // Total KPIs
-        $totalEvents = (clone $vendorEvents)->count();
-        $publishedEvents = (clone $vendorEvents)->where('status', 'published')->count();
-        $draftEvents = (clone $vendorEvents)->where('status', 'draft')->count();
-        $completedEvents = (clone $vendorEvents)->where('status', 'completed')->count();
+        $totalEvents = (clone $eventsQuery)->count();
+        $publishedEvents = (clone $eventsQuery)->where('status', 'published')->count();
+        $draftEvents = (clone $eventsQuery)->where('status', 'draft')->count();
+        $completedEvents = (clone $eventsQuery)->where('status', 'completed')->count();
 
-        $paidOrdersQuery = Order::whereIn('event_id', $vendorEventIds)->where('payment_status', 'paid');
+        $ordersScope = Order::query()->when(! $isAdmin, fn ($q) => $q->whereIn('event_id', $eventIds));
+        $paidOrdersQuery = (clone $ordersScope)->where('payment_status', 'paid');
+
         $totalRevenue = (float) (clone $paidOrdersQuery)->sum('total_price');
         $totalTicketsSold = (int) (clone $paidOrdersQuery)->sum('quantity');
         $totalAttendees = (int) (clone $paidOrdersQuery)->distinct('attendee_email')->count('attendee_email');
 
-        // Total Quota across all tickets
-        $totalQuota = (int) EventTicket::whereIn('event_id', $vendorEventIds)->sum('quota');
+        // Platform fee for admin (3%) & total registered vendors
+        $platformFee = $isAdmin ? (float) bcmul((string) $totalRevenue, (string) self::PLATFORM_FEE_RATE, 2) : null;
+        $totalVendors = $isAdmin ? User::where('role', 'vendor')->count() : null;
+
+        // Total Quota across tickets
+        $totalQuota = (int) EventTicket::when(! $isAdmin, fn ($q) => $q->whereIn('event_id', $eventIds))->sum('quota');
 
         // Sales trend for the last 14 days
         $daysCount = 14;
         $startDate = Carbon::today()->subDays($daysCount - 1);
 
-        $dailyStats = Order::whereIn('event_id', $vendorEventIds)
+        $dailyStats = (clone $ordersScope)
             ->where('payment_status', 'paid')
             ->where('created_at', '>=', $startDate->startOfDay())
             ->selectRaw('DATE(created_at) as order_date, SUM(total_price) as revenue, SUM(quantity) as tickets, COUNT(*) as orders_count')
@@ -65,7 +80,7 @@ class DashboardController extends Controller
         }
 
         // Category breakdown
-        $categories = (clone $vendorEvents)
+        $categories = (clone $eventsQuery)
             ->selectRaw('category, count(*) as count')
             ->groupBy('category')
             ->orderByDesc('count')
@@ -76,15 +91,16 @@ class DashboardController extends Controller
             ]);
 
         // Event type breakdown
-        $types = (clone $vendorEvents)
+        $types = (clone $eventsQuery)
             ->selectRaw('type, count(*) as count')
             ->groupBy('type')
             ->pluck('count', 'type')
             ->toArray();
 
         // Recent orders / activity (last 7)
-        $recentOrders = Order::whereIn('event_id', $vendorEventIds)
-            ->with(['event:id,title,slug', 'ticket:id,name'])
+        $feeRate = self::PLATFORM_FEE_RATE;
+        $recentOrders = (clone $ordersScope)
+            ->with(['event:id,title,slug,user_id', 'event.user:id,name,username', 'ticket:id,name'])
             ->latest()
             ->limit(7)
             ->get()
@@ -95,16 +111,19 @@ class DashboardController extends Controller
                 'attendee_email' => $order->attendee_email,
                 'event_title' => $order->event?->title ?? '-',
                 'event_slug' => $order->event?->slug ?? '',
+                'vendor_name' => $order->event?->user?->name ?? null,
                 'ticket_name' => $order->ticket?->name ?? 'Tiket Masuk',
                 'quantity' => (int) $order->quantity,
                 'total_price' => (float) $order->total_price,
+                'platform_fee' => $isAdmin ? (float) bcmul((string) $order->total_price, (string) $feeRate, 2) : null,
                 'payment_status' => $order->payment_status,
                 'created_at_human' => $order->created_at?->diffForHumans() ?? '',
                 'created_at' => $order->created_at?->format('d M Y, H:i') ?? '',
             ]);
 
         // Upcoming / top active events (last 5)
-        $upcomingEvents = Event::where('user_id', $user->id)
+        $upcomingEvents = (clone $eventsQuery)
+            ->with(['user:id,name,username'])
             ->withCount('tickets')
             ->withSum('tickets as tickets_quota', 'quota')
             ->withSum('tickets as tickets_sold', 'sold')
@@ -119,6 +138,7 @@ class DashboardController extends Controller
                 'category' => $event->category,
                 'type' => $event->type,
                 'status' => $event->status,
+                'vendor_name' => $event->user?->name ?? null,
                 'start_date' => $event->start_date?->format('d M Y, H:i'),
                 'cover_image' => $event->cover_image,
                 'tickets_sold' => (int) ($event->tickets_sold ?? 0),
@@ -126,6 +146,8 @@ class DashboardController extends Controller
             ]);
 
         return Inertia::render('dashboard', [
+            'isAdmin' => $isAdmin,
+            'feeRate' => self::PLATFORM_FEE_RATE,
             'stats' => [
                 'total_revenue' => $totalRevenue,
                 'total_tickets_sold' => $totalTicketsSold,
@@ -135,6 +157,8 @@ class DashboardController extends Controller
                 'completed_events' => $completedEvents,
                 'total_attendees' => $totalAttendees,
                 'total_quota' => $totalQuota,
+                'platform_fee' => $platformFee,
+                'total_vendors' => $totalVendors,
             ],
             'sales_trend' => $salesTrend,
             'categories' => $categories,
@@ -148,4 +172,3 @@ class DashboardController extends Controller
         ]);
     }
 }
-

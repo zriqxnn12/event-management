@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { BookOpen, CalendarDays, FolderGit2, LayoutGrid, ShoppingCart } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
@@ -16,40 +16,30 @@ import {
 import { dashboard } from '@/routes';
 import { index as vendorEventsIndex } from '@/actions/App/Http/Controllers/Vendor/EventController';
 import { index as ordersIndex } from '@/actions/App/Http/Controllers/OrderController';
-import type { NavItem } from '@/types';
-
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Event',
-        href: vendorEventsIndex().url,
-        icon: CalendarDays,
-    },
-    {
-        title: 'Orders',
-        href: ordersIndex().url,
-        icon: ShoppingCart,
-    },
-];
-
-const footerNavItems: NavItem[] = [
-    {
-        title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
-        icon: FolderGit2,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#react',
-        icon: BookOpen,
-    },
-];
+import type { NavItem, User } from '@/types';
 
 export function AppSidebar() {
+    const { auth } = usePage<{ auth: { user: User } }>().props;
+    const isAdmin = auth?.user?.role === 'admin';
+
+    const mainNavItems: NavItem[] = [
+        {
+            title: 'Dashboard',
+            href: dashboard(),
+            icon: LayoutGrid,
+        },
+        {
+            title: 'Event',
+            href: vendorEventsIndex().url,
+            icon: CalendarDays,
+        },
+        {
+            title: 'Orders',
+            href: ordersIndex().url,
+            icon: ShoppingCart,
+        },
+    ];
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>

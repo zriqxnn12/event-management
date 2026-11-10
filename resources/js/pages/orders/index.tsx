@@ -109,7 +109,7 @@ export default function OrdersIndex({ orders, filters, eventOptions, isAdmin, fe
         const params: Record<string, string | number | undefined> = {
             payment_status: overrides.payment_status ?? filters.payment_status,
             event_id: overrides.event_id ?? filters.event_id ?? undefined,
-            search: overrides.search !== undefined ? overrides.search : (filters.search ?? undefined),
+            search: (overrides.search !== undefined ? overrides.search : filters.search) || undefined,
         };
 
         // Omit 'all' so the URL stays clean
@@ -377,11 +377,11 @@ export default function OrdersIndex({ orders, filters, eventOptions, isAdmin, fe
                                             <th scope="col" className="px-4 py-3.5">
                                                 Event / Tiket
                                             </th>
-                                            <th scope="col" className="px-4 py-3.5 text-right">
+                                            <th scope="col" className="px-4 py-3.5">
                                                 Total
                                             </th>
                                             {isAdmin && (
-                                                <th scope="col" className="px-4 py-3.5 text-right">
+                                                <th scope="col" className="px-4 py-3.5">
                                                     Fee (3%)
                                                 </th>
                                             )}
@@ -453,7 +453,7 @@ export default function OrdersIndex({ orders, filters, eventOptions, isAdmin, fe
                                                     </td>
 
                                                     {/* Total */}
-                                                    <td className="px-4 py-3.5 align-middle text-right">
+                                                    <td className="px-4 py-3.5 align-middle">
                                                         <span className="font-bold">
                                                             {order.total_price <= 0
                                                                 ? 'GRATIS'
@@ -463,7 +463,7 @@ export default function OrdersIndex({ orders, filters, eventOptions, isAdmin, fe
 
                                                     {/* Platform fee – admin only */}
                                                     {isAdmin && (
-                                                        <td className="px-4 py-3.5 align-middle text-right">
+                                                        <td className="px-4 py-3.5 align-middle">
                                                             {order.payment_status === 'paid' && order.total_price > 0 ? (
                                                                 <span className="font-semibold text-emerald-600 dark:text-emerald-400">
                                                                     {order.formatted_fee ?? formatCurrency(order.total_price * feeRate)}
@@ -502,23 +502,6 @@ export default function OrdersIndex({ orders, filters, eventOptions, isAdmin, fe
                                 </table>
                             </div>
                         </div>
-
-                        {/* Summary row (admin: total fees on current page) */}
-                        {isAdmin && (
-                            <div className="flex items-center justify-end gap-2 rounded-xl border-2 border-foreground bg-card px-4 py-3 shadow-[2px_2px_0px_0px_#000] dark:shadow-[2px_2px_0px_0px_#fff]">
-                                <Coins className="size-4 text-violet-600 dark:text-violet-400" />
-                                <span className="text-sm font-semibold text-muted-foreground">
-                                    Total Fee Halaman Ini:
-                                </span>
-                                <span className="font-black text-emerald-600 dark:text-emerald-400">
-                                    {formatCurrency(
-                                        orders.data
-                                            .filter((o) => o.payment_status === 'paid' && o.total_price > 0)
-                                            .reduce((sum, o) => sum + (o.platform_fee ?? o.total_price * feeRate), 0),
-                                    )}
-                                </span>
-                            </div>
-                        )}
 
                         {/* Pagination */}
                         {orders.last_page > 1 && (

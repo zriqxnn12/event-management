@@ -146,7 +146,7 @@ export default function EventDetail({
         setIsSubmitting(true);
 
         router.post(
-            '/orders',
+            '/order',
             {
                 event_id: event.id,
                 ticket_id: selectedTicket.id,

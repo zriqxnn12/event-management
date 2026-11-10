@@ -15,6 +15,7 @@ export type Event = {
     online_platform?: string | null;
     max_attendees?: number | null;
     cover_image?: string | null;
+    user?: { id: number; name: string; username: string } | null;
     tickets_count: number;
     coupons_count: number;
 };
