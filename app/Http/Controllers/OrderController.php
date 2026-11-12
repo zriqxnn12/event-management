@@ -306,24 +306,7 @@ class OrderController extends Controller
         }
 
         try {
-            $verificationUrl = route('orders.show', $order);
-            $paidAt = $order->updated_at?->translatedFormat('d M Y, H:i') ?? now()->translatedFormat('d M Y, H:i');
-            $priceDisplay = $order->total_price <= 0 ? 'GRATIS' : 'Rp '.number_format((float) $order->total_price, 0, ',', '.');
-
-            $payload = implode("\n", [
-                '=== BUKTI PEMBAYARAN RESMI ===',
-                "No. Pesanan : {$order->number}",
-                'Status      : LUNAS / TERKONFIRMASI',
-                "Acara       : {$order->event->title}",
-                "Tiket       : {$order->ticket->name} ({$order->quantity}x)",
-                "Total       : {$priceDisplay}",
-                "Peserta     : {$order->attendee_name}",
-                "Email       : {$order->attendee_email}",
-                "Waktu       : {$paidAt} WIB",
-                "Verifikasi  : {$verificationUrl}",
-            ]);
-
-            $svg = (string) QrCode::size(240)->margin(1)->generate($payload);
+            $svg = (string) QrCode::size(240)->margin(1)->generate($order->number);
 
             return 'data:image/svg+xml;base64,'.base64_encode($svg);
         } catch (\Throwable $e) {
