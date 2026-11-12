@@ -339,6 +339,7 @@ export type CheckInAttendee = {
     checked_in_at: string | null;
     checked_in_count: number;
     ticket: { id: number; name: string } | null;
+    event?: { id: number; title: string } | null;
     total_price: number;
     formatted_price: string;
 };

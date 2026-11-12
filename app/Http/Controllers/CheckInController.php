@@ -130,6 +130,7 @@ class CheckInController extends Controller
 
         $validated = $request->validate([
             'order_number' => ['required', 'string'],
+            'allow_undo' => ['sometimes', 'boolean'],
         ]);
 
         $order = Order::with(['event:id,title,user_id', 'ticket:id,name'])
@@ -159,14 +160,23 @@ class CheckInController extends Controller
             ], 422);
         }
 
-        // If already checked in → undo (toggle)
+        // If already checked in → only undo when explicitly requested; otherwise report already checked in
         if ($order->checked_in_at) {
-            $order->update(['checked_in_at' => null, 'checked_in_count' => 0]);
+            if ($request->boolean('allow_undo')) {
+                $order->update(['checked_in_at' => null, 'checked_in_count' => 0]);
+
+                return response()->json([
+                    'success' => true,
+                    'action' => 'undo',
+                    'message' => "Check-in untuk {$order->attendee_name} telah dibatalkan.",
+                    'order' => $this->formatOrderForResponse($order),
+                ]);
+            }
 
             return response()->json([
                 'success' => true,
-                'action' => 'undo',
-                'message' => "Check-in untuk {$order->attendee_name} telah dibatalkan.",
+                'action' => 'already_checked_in',
+                'message' => "Sudah check-in sebelumnya pada {$order->checked_in_at->format('d M Y, H:i')}.",
                 'order' => $this->formatOrderForResponse($order),
             ]);
         }
