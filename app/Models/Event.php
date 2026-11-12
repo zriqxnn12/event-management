@@ -116,4 +116,9 @@ class Event extends Model
     {
         return $this->hasMany(EventSponsor::class)->orderBy('order');
     }
+
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
 }

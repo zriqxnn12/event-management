@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CheckInController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\Vendor\EventController;
@@ -14,6 +15,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Orders index (admin sees all + fees; vendor sees own orders)
     Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
+
+    // Check-in management
+    Route::get('check-in', [CheckInController::class, 'index'])->name('check-in.index');
+    Route::post('check-in/scan', [CheckInController::class, 'checkIn'])->name('check-in.scan');
+    Route::get('check-in/lookup', [CheckInController::class, 'lookup'])->name('check-in.lookup');
 
     // Event management (admin sees all events; vendor sees own events)
     Route::prefix('vendor')->name('vendor.')->group(function () {

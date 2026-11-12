@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, CalendarDays, FolderGit2, LayoutGrid, ShoppingCart } from 'lucide-react';
+import { BookOpen, CalendarDays, FolderGit2, LayoutGrid, ScanLine, ShoppingCart } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -16,6 +16,7 @@ import {
 import { dashboard } from '@/routes';
 import { index as vendorEventsIndex } from '@/actions/App/Http/Controllers/Vendor/EventController';
 import { index as ordersIndex } from '@/actions/App/Http/Controllers/OrderController';
+import { index as checkInIndex } from '@/actions/App/Http/Controllers/CheckInController';
 import type { NavItem, User } from '@/types';
 
 export function AppSidebar() {
@@ -37,6 +38,11 @@ export function AppSidebar() {
             title: 'Orders',
             href: ordersIndex().url,
             icon: ShoppingCart,
+        },
+        {
+            title: 'Check-in',
+            href: checkInIndex().url,
+            icon: ScanLine,
         },
     ];
 

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -25,11 +26,14 @@ use Illuminate\Support\Facades\Log;
  * @property float $total_price
  * @property string $payment_status pending|paid|expired|cancelled
  * @property string|null $snap_token
+ * @property Carbon|null $checked_in_at
+ * @property int $checked_in_count
  */
 #[Fillable([
     'number', 'user_id', 'event_id', 'event_ticket_id',
     'attendee_name', 'attendee_email', 'attendee_phone', 'notes',
     'quantity', 'total_price', 'payment_status', 'snap_token',
+    'checked_in_at', 'checked_in_count',
 ])]
 class Order extends Model
 {
@@ -41,6 +45,8 @@ class Order extends Model
         return [
             'total_price' => 'decimal:2',
             'quantity' => 'integer',
+            'checked_in_at' => 'datetime',
+            'checked_in_count' => 'integer',
         ];
     }
 

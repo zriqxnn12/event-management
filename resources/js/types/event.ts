@@ -315,3 +315,45 @@ export type OrdersIndexProps = {
     stats: OrdersStats;
 };
 
+// ─── Check-in ────────────────────────────────────────────────────────────────
+
+export type CheckInEventOption = {
+    id: number;
+    title: string;
+    start_date: string | null;
+    end_date: string | null;
+    cover_image: string | null;
+    status: string;
+    total_orders: number;
+    checked_in: number;
+};
+
+export type CheckInAttendee = {
+    id: number;
+    number: string;
+    attendee_name: string;
+    attendee_email: string;
+    attendee_phone: string | null;
+    quantity: number;
+    is_checked_in: boolean;
+    checked_in_at: string | null;
+    checked_in_count: number;
+    ticket: { id: number; name: string } | null;
+    total_price: number;
+    formatted_price: string;
+};
+
+export type CheckInFilters = {
+    event_id: number | null;
+    search: string | null;
+    checked_in: string;
+};
+
+export type CheckInIndexProps = {
+    events: CheckInEventOption[];
+    selectedEvent: { id: number; title: string; start_date: string | null; end_date: string | null; status: string } | null;
+    attendees: PaginatedData<CheckInAttendee> | null;
+    filters: CheckInFilters;
+    isAdmin: boolean;
+};
+
