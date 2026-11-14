@@ -79,4 +79,14 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     {
         return $this->hasMany(Event::class);
     }
+
+    /**
+     * Get the withdrawal requests made by the user.
+     *
+     * @return HasMany<Withdrawal>
+     */
+    public function withdrawals(): HasMany
+    {
+        return $this->hasMany(Withdrawal::class);
+    }
 }

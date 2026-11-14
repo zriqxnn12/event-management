@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, CalendarDays, FolderGit2, LayoutGrid, ScanLine, ShoppingCart } from 'lucide-react';
+import { CalendarDays, LayoutGrid, ScanLine, ShoppingCart, Wallet } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -17,6 +17,7 @@ import { dashboard } from '@/routes';
 import { index as vendorEventsIndex } from '@/actions/App/Http/Controllers/Vendor/EventController';
 import { index as ordersIndex } from '@/actions/App/Http/Controllers/OrderController';
 import { index as checkInIndex } from '@/actions/App/Http/Controllers/CheckInController';
+import { index as withdrawalsIndex } from '@/actions/App/Http/Controllers/WithdrawalController';
 import type { NavItem, User } from '@/types';
 
 export function AppSidebar() {
@@ -43,6 +44,11 @@ export function AppSidebar() {
             title: 'Check-in',
             href: checkInIndex().url,
             icon: ScanLine,
+        },
+        {
+            title: 'Penarikan Dana',
+            href: withdrawalsIndex().url,
+            icon: Wallet,
         },
     ];
 
