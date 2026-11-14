@@ -9,6 +9,7 @@ use App\Models\Withdrawal;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -102,13 +103,19 @@ class WithdrawalController extends Controller
             ];
         } else {
             // Vendor specific revenue calculations
-            $vendorEventIds = Event::where('user_id', $user->id)->pluck('id');
+            $vendorEventIds = Event::withTrashed()->where('user_id', $user->id)->pluck('id');
             $grossRevenue = (float) Order::whereIn('event_id', $vendorEventIds)
                 ->where('payment_status', 'paid')
                 ->sum('total_price');
 
             $platformFee = (float) bcmul((string) $grossRevenue, (string) self::PLATFORM_FEE_RATE, 2);
             $netEarnings = max(0, $grossRevenue - $platformFee);
+
+            $committedAmount = (float) Withdrawal::where('user_id', $user->id)
+                ->whereIn('status', ['approved', 'pending'])
+                ->sum('amount');
+
+            $availableBalance = max(0, $netEarnings - $committedAmount);
 
             $totalWithdrawn = (float) Withdrawal::where('user_id', $user->id)
                 ->where('status', 'approved')
@@ -117,8 +124,6 @@ class WithdrawalController extends Controller
             $pendingAmount = (float) Withdrawal::where('user_id', $user->id)
                 ->where('status', 'pending')
                 ->sum('amount');
-
-            $availableBalance = max(0, $netEarnings - ($totalWithdrawn + $pendingAmount));
 
             $stats = [
                 'available_balance' => $availableBalance,
@@ -168,41 +173,42 @@ class WithdrawalController extends Controller
             'notes' => ['nullable', 'string', 'max:500'],
         ]);
 
-        // Calculate available balance to verify sufficient funds
-        $vendorEventIds = Event::where('user_id', $user->id)->pluck('id');
-        $grossRevenue = (float) Order::whereIn('event_id', $vendorEventIds)
-            ->where('payment_status', 'paid')
-            ->sum('total_price');
+        DB::transaction(function () use ($user, $validated) {
+            // Lock the vendor row to serialize concurrent withdrawal submissions
+            User::where('id', $user->id)->lockForUpdate()->first();
 
-        $platformFee = (float) bcmul((string) $grossRevenue, (string) self::PLATFORM_FEE_RATE, 2);
-        $netEarnings = max(0, $grossRevenue - $platformFee);
+            // Calculate available balance to verify sufficient funds
+            $vendorEventIds = Event::withTrashed()->where('user_id', $user->id)->pluck('id');
+            $grossRevenue = (float) Order::whereIn('event_id', $vendorEventIds)
+                ->where('payment_status', 'paid')
+                ->sum('total_price');
 
-        $totalWithdrawn = (float) Withdrawal::where('user_id', $user->id)
-            ->where('status', 'approved')
-            ->sum('amount');
+            $platformFee = (float) bcmul((string) $grossRevenue, (string) self::PLATFORM_FEE_RATE, 2);
+            $netEarnings = max(0, $grossRevenue - $platformFee);
 
-        $pendingAmount = (float) Withdrawal::where('user_id', $user->id)
-            ->where('status', 'pending')
-            ->sum('amount');
+            $committedAmount = (float) Withdrawal::where('user_id', $user->id)
+                ->whereIn('status', ['approved', 'pending'])
+                ->sum('amount');
 
-        $availableBalance = max(0, $netEarnings - ($totalWithdrawn + $pendingAmount));
+            $availableBalance = max(0, $netEarnings - $committedAmount);
 
-        if ((float) $validated['amount'] > $availableBalance) {
-            throw ValidationException::withMessages([
-                'amount' => 'Saldo yang dapat ditarik tidak mencukupi (Saldo tersedia: Rp '.number_format($availableBalance, 0, ',', '.').').',
+            if ((float) $validated['amount'] > $availableBalance) {
+                throw ValidationException::withMessages([
+                    'amount' => 'Saldo yang dapat ditarik tidak mencukupi (Saldo tersedia: Rp '.number_format($availableBalance, 0, ',', '.').').',
+                ]);
+            }
+
+            Withdrawal::create([
+                'reference_number' => Withdrawal::generateReferenceNumber(),
+                'user_id' => $user->id,
+                'amount' => $validated['amount'],
+                'bank_name' => $validated['bank_name'],
+                'account_number' => $validated['account_number'],
+                'account_name' => $validated['account_name'],
+                'status' => 'pending',
+                'notes' => $validated['notes'] ?? null,
             ]);
-        }
-
-        Withdrawal::create([
-            'reference_number' => Withdrawal::generateReferenceNumber(),
-            'user_id' => $user->id,
-            'amount' => $validated['amount'],
-            'bank_name' => $validated['bank_name'],
-            'account_number' => $validated['account_number'],
-            'account_name' => $validated['account_name'],
-            'status' => 'pending',
-            'notes' => $validated['notes'] ?? null,
-        ]);
+        });
 
         return redirect()->route('withdrawals.index')->with('success', 'Permintaan penarikan dana berhasil diajukan dan sedang menunggu persetujuan admin.');
     }
@@ -228,12 +234,18 @@ class WithdrawalController extends Controller
             'admin_notes' => ['nullable', 'string', 'max:500'],
         ]);
 
-        $withdrawal->update([
-            'status' => $validated['status'],
-            'admin_notes' => $validated['admin_notes'] ?? null,
-            'approved_by' => $user->id,
-            'processed_at' => now(),
-        ]);
+        $affected = Withdrawal::where('id', $withdrawal->id)
+            ->where('status', 'pending')
+            ->update([
+                'status' => $validated['status'],
+                'admin_notes' => $validated['admin_notes'] ?? null,
+                'approved_by' => $user->id,
+                'processed_at' => now(),
+            ]);
+
+        if ($affected !== 1) {
+            return redirect()->route('withdrawals.index')->with('error', 'Permintaan penarikan ini sudah diproses sebelumnya.');
+        }
 
         $actionText = $validated['status'] === 'approved' ? 'disetujui' : 'ditolak';
 

@@ -613,7 +613,7 @@ export default function WithdrawalsIndex({
 
             {/* Modal: Ajukan Penarikan Dana (Vendor) */}
             <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
-                <DialogContent className="border-2 border-foreground shadow-[6px_6px_0px_0px_#000] sm:max-w-lg dark:shadow-[6px_6px_0px_0px_#fff]">
+                <DialogContent className="max-h-[90vh] overflow-y-auto border-2 border-foreground shadow-[6px_6px_0px_0px_#000] sm:max-w-lg dark:shadow-[6px_6px_0px_0px_#fff]">
                     <DialogHeader>
                         <DialogTitle className="text-xl font-black">Ajukan Penarikan Dana</DialogTitle>
                         <DialogDescription className="text-xs text-muted-foreground">
@@ -644,7 +644,7 @@ export default function WithdrawalsIndex({
                                 type="number"
                                 min={minWithdrawalAmount}
                                 max={availableBalance}
-                                step="1000"
+                                step="1"
                                 value={createForm.data.amount}
                                 onChange={(e) => createForm.setData('amount', e.target.value)}
                                 placeholder="Contoh: 150000"
