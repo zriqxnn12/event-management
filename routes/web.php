@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\Vendor\EventController;
 use App\Http\Controllers\VendorProfileController;
+use App\Http\Controllers\WithdrawalController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
@@ -20,6 +21,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('check-in', [CheckInController::class, 'index'])->name('check-in.index');
     Route::post('check-in/scan', [CheckInController::class, 'checkIn'])->name('check-in.scan');
     Route::get('check-in/lookup', [CheckInController::class, 'lookup'])->name('check-in.lookup');
+
+    // Withdrawals (vendor balance & requests; admin review & approval)
+    Route::get('withdrawals', [WithdrawalController::class, 'index'])->name('withdrawals.index');
+    Route::post('withdrawals', [WithdrawalController::class, 'store'])->name('withdrawals.store');
+    Route::patch('withdrawals/{withdrawal}/status', [WithdrawalController::class, 'updateStatus'])->name('withdrawals.update-status');
 
     // Event management (admin sees all events; vendor sees own events)
     Route::prefix('vendor')->name('vendor.')->group(function () {

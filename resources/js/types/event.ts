@@ -358,3 +358,63 @@ export type CheckInIndexProps = {
     isAdmin: boolean;
 };
 
+// ─── Withdrawals ─────────────────────────────────────────────────────────────
+
+export type WithdrawalStatus = 'pending' | 'approved' | 'rejected';
+
+export type WithdrawalRow = {
+    id: number;
+    reference_number: string;
+    amount: number;
+    formatted_amount: string;
+    bank_name: string;
+    account_number: string;
+    account_name: string;
+    status: WithdrawalStatus;
+    notes: string | null;
+    admin_notes: string | null;
+    created_at: string;
+    created_at_human: string;
+    processed_at: string | null;
+    user: { id: number; name: string; email: string; username: string } | null;
+    approver: { id: number; name: string } | null;
+};
+
+export type WithdrawalFilters = {
+    status: string;
+    search: string | null;
+};
+
+export type WithdrawalStats = {
+    available_balance: number | null;
+    formatted_available_balance: string | null;
+    net_earnings: number | null;
+    formatted_net_earnings: string | null;
+    gross_revenue?: number;
+    formatted_gross_revenue?: string;
+    platform_fee?: number;
+    formatted_platform_fee?: string;
+    total_withdrawn?: number;
+    formatted_total_withdrawn?: string;
+    pending_amount?: number;
+    formatted_pending_amount?: string;
+    total_approved_amount?: number;
+    formatted_approved_amount?: string;
+    total_pending_amount?: number;
+    total_rejected_amount?: number;
+    formatted_rejected_amount?: string;
+    pending_count: number;
+    approved_count: number;
+    rejected_count: number;
+};
+
+export type WithdrawalsIndexProps = {
+    withdrawals: PaginatedData<WithdrawalRow>;
+    filters: WithdrawalFilters;
+    stats: WithdrawalStats;
+    isAdmin: boolean;
+    minWithdrawalAmount: number;
+    formattedMinWithdrawalAmount: string;
+};
+
+
